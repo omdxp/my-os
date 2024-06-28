@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fs/file.h"
+
 typedef unsigned int MYOS_DISK_TYPE;
 
 // represents real physical hard disk
@@ -9,6 +11,8 @@ struct disk
 {
 	MYOS_DISK_TYPE type;
 	int sector_size;
+
+	struct filesystem *filesystem;
 };
 
 void disk_search_and_init();
