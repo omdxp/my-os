@@ -101,6 +101,8 @@ void kernel_main()
 	{
 		struct file_stat s;
 		fstat(fd, &s);
+		fclose(fd);
+		print("file closed\n");
 	}
 	while (1)
 	{
