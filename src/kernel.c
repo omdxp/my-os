@@ -67,6 +67,14 @@ void print(const char *str)
 
 static struct paging_4gb_chunk *kernel_chunk = 0;
 
+void panic(const char *msg)
+{
+	print(msg);
+	while (42)
+	{
+	}
+}
+
 void kernel_main()
 {
 	terminal_init();
