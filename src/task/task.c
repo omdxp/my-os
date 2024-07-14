@@ -127,6 +127,33 @@ int task_switch(struct task *task)
 	return 0;
 }
 
+void task_save_state(struct task *task, struct interrupt_frame *frame)
+{
+	task->registers.ip = frame->ip;
+	task->registers.cs = frame->cs;
+	task->registers.flags = frame->flags;
+	task->registers.esp = frame->esp;
+	task->registers.ss = frame->ss;
+	task->registers.eax = frame->eax;
+	task->registers.ebp = frame->ebp;
+	task->registers.ebx = frame->ebx;
+	task->registers.ecx = frame->ecx;
+	task->registers.edi = frame->edi;
+	task->registers.edx = frame->edx;
+	task->registers.esi = frame->esi;
+}
+
+void task_current_save_state(struct interrupt_frame *frame)
+{
+	if (!task_current())
+	{
+		panic("task_current_save_state: No current task to save\n");
+	}
+
+	struct task *task = task_current();
+	task_save_state(task, frame);
+}
+
 int task_page()
 {
 	user_registers();
