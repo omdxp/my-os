@@ -28,3 +28,4 @@ struct process
 };
 
 int process_load_for_slot(const char *filename, struct process **process, int process_slot);
+int process_load(const char *filename, struct process **process);

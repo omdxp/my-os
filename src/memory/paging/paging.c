@@ -92,7 +92,7 @@ void paging_free_4gb(struct paging_4gb_chunk *chunk)
 
 void *paging_align_address(void *ptr)
 {
-	if (!(uint32_t)ptr % PAGING_PAGE_SIZE)
+	if ((uint32_t)ptr % PAGING_PAGE_SIZE)
 	{
 		return (void *)((uint32_t)ptr + PAGING_PAGE_SIZE - ((uint32_t)ptr % PAGING_PAGE_SIZE));
 	}
