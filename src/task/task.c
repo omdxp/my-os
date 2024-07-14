@@ -123,7 +123,7 @@ out:
 int task_switch(struct task *task)
 {
 	current_task = task;
-	paging_switch(task->page_directory->directory_entry);
+	paging_switch(task->page_directory);
 	return 0;
 }
 
