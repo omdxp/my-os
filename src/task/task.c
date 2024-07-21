@@ -77,7 +77,7 @@ int task_init(struct task *task, struct process *process)
 	task->registers.ip = MYOS_PROGRAM_VIRTUAL_ADDRESS;
 	task->registers.ss = USER_DATA_SEGMENT;
 	task->registers.cs = USER_CODE_SEGMENT;
-	task->registers.esp = MYOS_PROGRAM_VIRTUAL_ADDRESS_START;
+	task->registers.esp = MYOS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
 
 	task->process = process;
 
@@ -201,6 +201,13 @@ int task_page()
 	return 0;
 }
 
+int task_page_task(struct task *task)
+{
+	user_registers();
+	paging_switch(task->page_directory);
+	return 0;
+}
+
 void task_run_first_ever_task()
 {
 	if (!current_task)
@@ -210,4 +217,21 @@ void task_run_first_ever_task()
 
 	task_switch(task_head);
 	task_return(&task_head->registers);
+}
+
+void *task_get_stack_item(struct task *task, int index)
+{
+	void *res = 0;
+
+	uint32_t *sp_ptr = (uint32_t *)task->registers.esp;
+
+	// switch to given task's page
+	task_page_task(task);
+
+	res = (void *)sp_ptr[index];
+
+	// switch back to kernel's page
+	kernel_page();
+
+	return res;
 }
