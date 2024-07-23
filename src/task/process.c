@@ -18,7 +18,7 @@ static void process_init(struct process *process)
 	memset(process, 0, sizeof(struct process));
 }
 
-struct process *process_crrent()
+struct process *process_current()
 {
 	return current_process;
 }
