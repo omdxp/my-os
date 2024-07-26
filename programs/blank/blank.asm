@@ -5,13 +5,19 @@ section .asm
 global _start
 
 _start:
-
+	call getkey
 	push message
-	mov eax, 1 ; command 1 print
+	mov eax, 1
 	int 0x80
-	add esp, 4 ; (message (4 bytes))
-	
+	add esp, 4
 	jmp $
+
+getkey:
+	mov eax, 2 ; command 2 getkey
+	int 0x80
+	cmp eax, 0x00
+	je getkey
+	ret
 
 section .data
 message: db 'Hello from program!', 0
