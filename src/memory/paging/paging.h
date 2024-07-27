@@ -32,4 +32,5 @@ int paging_map_to(struct paging_4gb_chunk *directory, void *virt, void *phys, vo
 int paging_map_range(struct paging_4gb_chunk *directory, void *virt, void *phys, int count, int flags);
 int paging_map(struct paging_4gb_chunk *directory, void *virt, void *phys, int flags);
 void *paging_align_address(void *ptr);
+void *paging_align_to_lower_page(void *addr);
 uint32_t paging_get(uint32_t *directory, void *virt);
