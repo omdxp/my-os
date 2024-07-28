@@ -4,6 +4,7 @@
 int main(int argc, char **argv)
 {
 	print("Hello from user program!\n");
+	print(itoa(2024));
 
 	void *ptr = malloc(512);
 	free(ptr);
