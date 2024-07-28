@@ -5,13 +5,10 @@
 
 int main(int argc, char **argv)
 {
-	char *ptr = malloc(20);
-	strcpy(ptr, "Hello, World!");
-	print(ptr);
-	free(ptr);
-
-	ptr[0] = 'O';
-	print("hi\n");
+	char str[] = "Hello, World!";
+	struct command_argument *root_command = myos_parse_command(str, sizeof(str));
+	printf("%s\n", root_command->argument);
+	printf("%s\n", root_command->next->argument);
 
 	while (42)
 	{
