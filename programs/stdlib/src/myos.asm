@@ -8,6 +8,7 @@ global myos_malloc:function
 global myos_free:function
 global myos_putchar:function
 global myos_process_load_start:function
+global myos_system:function
 global myos_process_get_arguments:function
 
 ; void print(const char* filename)
@@ -69,6 +70,17 @@ myos_process_load_start:
 	mov ebp, esp
 	mov eax, 6 ; command 6 process load start
 	push dword[ebp+8] ; variable filename
+	int 0x80
+	add esp, 4
+	pop ebp
+	ret
+
+; int myos_system(struct command_argument* arguments)
+myos_system:
+	push ebp
+	mov ebp, esp
+	mov eax, 7 ; command 7 invoke system command
+	push dword[ebp+8] ; variable arguments
 	int 0x80
 	add esp, 4
 	pop ebp

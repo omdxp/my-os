@@ -25,3 +25,5 @@ void myos_terminal_readline(char *out, int max, bool output_while_typing);
 void myos_process_load_start(const char *filename);
 struct command_argument *myos_parse_command(const char *command, int max);
 void myos_process_get_arguments(struct process_arguments *arguments);
+int myos_system(struct command_argument *arguments);
+int myos_system_run(const char *command);
