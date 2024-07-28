@@ -12,13 +12,12 @@ int main(int argc, char **argv)
 
 	printf("\n%i bytes was allocated for %s\n", 512, "ptr");
 
+	char buf[1024];
+	myos_terminal_readline(buf, sizeof(buf), true);
+	print(buf);
+
 	while (42)
 	{
-		int c = getkey();
-		if (c != 0)
-		{
-			putchar(c);
-		}
 	}
 
 	return 0;

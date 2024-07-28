@@ -3,7 +3,7 @@
 section .asm
 
 global print:function
-global getkey:function
+global myos_getkey:function
 global myos_malloc:function
 global myos_free:function
 global myos_putchar:function
@@ -19,8 +19,8 @@ print:
 	pop ebp
 	ret
 
-; int getkey()
-getkey:
+; int myos_getkey()
+myos_getkey:
 	push ebp
 	mov ebp, esp
 	mov eax, 2 ; command 2 getkey
