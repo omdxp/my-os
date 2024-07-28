@@ -246,3 +246,15 @@ void *task_virtual_addr_to_phys(struct task *task, void *virt)
 {
 	return paging_get_phys(task->page_directory->directory_entry, virt);
 }
+
+void task_next()
+{
+	struct task *next_task = task_get_next();
+	if (!next_task)
+	{
+		panic("task_next: No more tasks\n");
+	}
+
+	task_switch(next_task);
+	task_return(&next_task->registers);
+}

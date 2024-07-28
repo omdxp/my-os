@@ -10,6 +10,9 @@ int main(int argc, char **argv)
 		printf("%s\n", argv[i]);
 	}
 
+	char *ptr = (char *)0x00;
+	*ptr = 0x50;
+
 	while (42)
 	{
 	}
