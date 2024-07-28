@@ -1,5 +1,6 @@
 #include "myos.h"
 #include "stdlib.h"
+#include "stdio.h"
 
 int main(int argc, char **argv)
 {
@@ -11,9 +12,10 @@ int main(int argc, char **argv)
 
 	while (42)
 	{
-		if (getkey() != 0)
+		int c = getkey();
+		if (c != 0)
 		{
-			print("key pressed!\n");
+			putchar(c);
 		}
 	}
 
