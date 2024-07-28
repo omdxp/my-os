@@ -8,6 +8,9 @@ int main(int argc, char **argv)
 	while (42)
 	{
 		print(argv[0]);
+		for (int i = 0; i < 1000000; i++)
+		{
+		}
 	}
 	return 0;
 }
