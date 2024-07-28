@@ -10,6 +10,8 @@ int main(int argc, char **argv)
 	void *ptr = malloc(512);
 	free(ptr);
 
+	printf("\n%i bytes was allocated for %s\n", 512, "ptr");
+
 	while (42)
 	{
 		int c = getkey();
