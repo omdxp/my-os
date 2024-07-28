@@ -58,3 +58,4 @@ void user_registers();
 void task_current_save_state(struct interrupt_frame *frame);
 int copy_string_from_task(struct task *task, void *virt, void *phys, int max);
 void *task_get_stack_item(struct task *task, int index);
+void *task_virtual_addr_to_phys(struct task *task, void *virt);
