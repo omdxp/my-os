@@ -10,6 +10,7 @@ global myos_putchar:function
 global myos_process_load_start:function
 global myos_system:function
 global myos_process_get_arguments:function
+global myos_exit:function
 
 ; void print(const char* filename)
 print:
@@ -94,5 +95,14 @@ myos_process_get_arguments:
 	push dword[ebp+8] ; variable arguments
 	int 0x80
 	add esp, 4
+	pop ebp
+	ret
+
+; void myos_exit()
+myos_exit:
+	push ebp
+	mov ebp, esp
+	mov eax, 9 ; command 9 exit
+	int 0x80
 	pop ebp
 	ret
