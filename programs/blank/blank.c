@@ -5,10 +5,9 @@
 
 int main(int argc, char **argv)
 {
-	for (int i = 0; i < argc; i++)
+	while (42)
 	{
-		printf("%s\n", argv[i]);
+		print(argv[0]);
 	}
-
 	return 0;
 }
