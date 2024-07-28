@@ -559,6 +559,7 @@ struct fat_item *fat16_new_fat_item_for_directory_item(struct disk *disk, struct
 	{
 		f_item->directory = fat16_load_directory(disk, item);
 		f_item->type = FAT_ITEM_TYPE_DIRECTORY;
+		return f_item;
 	}
 
 	f_item->type = FAT_ITEM_TYPE_FILE;
