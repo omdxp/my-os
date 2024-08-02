@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "stdio.h"
+#include "string.h"
 #include "stdlib.h"
 #include "myos.h"
 
@@ -12,7 +13,11 @@ int main(int argc, char **argv)
 		char buf[1024];
 		myos_terminal_readline(buf, sizeof(buf), true);
 		print("\n");
-		myos_system_run(buf);
+		int res = myos_system_run(buf);
+		if (res < 0)
+		{
+			printf("Unrecognized command\n");
+		}
 		print("\n");
 	}
 

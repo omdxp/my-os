@@ -13,3 +13,7 @@ char *strncpy(char *dest, const char *src, int count);
 bool isdigit(char c);
 int tonumericdigit(char c);
 char *strtok(char *str, const char *delimiters);
+char *strstr(const char *haystack, const char *needle);
+char *strcat(char *dest, const char *src);
+char *strncat(char *dest, const char *src, int count);
+char *strrchr(const char *s, int c);

@@ -5,12 +5,6 @@
 
 int main(int argc, char **argv)
 {
-	while (42)
-	{
-		print(argv[0]);
-		for (int i = 0; i < 1000000; i++)
-		{
-		}
-	}
+	print(argc == 1 ? "MYOS v1.0.0\n" : "Hello, World!\n");
 	return 0;
 }

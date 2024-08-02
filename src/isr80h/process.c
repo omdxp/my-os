@@ -48,6 +48,10 @@ void *isr80h_comman7_invoke_system_command(struct interrupt_frame *frame)
 	char path[MYOS_MAX_PATH];
 	strcpy(path, "0:/");
 	strncpy(path + 3, program_name, sizeof(path));
+	if (strstr(path, ".elf") == 0)
+	{
+		strcat(path, ".elf");
+	}
 
 	struct process *process = 0;
 	int res = process_load_switch(path, &process);

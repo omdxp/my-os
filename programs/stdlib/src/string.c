@@ -174,3 +174,74 @@ char *strtok(char *str, const char *delimiters)
 
 	return p_start;
 }
+
+char *strstr(const char *haystack, const char *needle)
+{
+	if (*needle == 0)
+	{
+		return (char *)haystack;
+	}
+
+	char *p1 = (char *)haystack;
+	while (*p1 != 0)
+	{
+		if (*p1 == *needle)
+		{
+			char *p1Begin = p1;
+			char *p2 = (char *)needle;
+			while (*p1 != 0 && *p2 != 0 && *p1 == *p2)
+			{
+				p1++;
+				p2++;
+			}
+
+			if (*p2 == 0)
+			{
+				return p1Begin;
+			}
+		}
+		p1++;
+	}
+
+	return 0;
+}
+
+char *strcat(char *dest, const char *src)
+{
+	char *ptr = dest + strlen(dest);
+	while (*src != 0)
+	{
+		*ptr = *src;
+		ptr++;
+		src++;
+	}
+	*ptr = 0;
+	return dest;
+}
+
+char *strncat(char *dest, const char *src, int count)
+{
+	char *ptr = dest + strlen(dest);
+	int i = 0;
+	for (i = 0; i < count; i++)
+	{
+		if (src[i] == 0)
+			break;
+		ptr[i] = src[i];
+	}
+	ptr[i] = 0;
+	return dest;
+}
+
+char *strrchr(const char *s, int c)
+{
+	char *last = 0;
+	for (;;)
+	{
+		if (*s == c)
+			last = (char *)s;
+		if (*s == '\0')
+			return last;
+		s++;
+	}
+}
