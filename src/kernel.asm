@@ -1,11 +1,13 @@
 [BITS 32]
 
 global _start
+extern kernel_main
 
 ; segment selectors
 CODE_SEG equ 0x08
 DATA_SEG equ 0x10
 LONG_MODE_CODE_SEG equ 0x18
+LONG_MODE_DATA_SEG equ 0x20
 
 _start:
 	mov ax, DATA_SEG
@@ -48,6 +50,19 @@ _start:
 
 [BITS 64]
 long_mode_entry:
+	mov ax, LONG_MODE_DATA_SEG
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
+
+	; setup stack for 64-bit mode
+	mov rbp, 0x00200000
+	mov rsp, rbp
+
+	; call kernel main function
+	jmp kernel_main
 	jmp $
 
 ; global descriptor table (GDT)
@@ -79,6 +94,14 @@ gdt:
 	db 00100000b        ; granularity (L bit set)
 	db 0x00             ; base high
 
+	; 64-bit data segment
+	dw 0x0000           ; limit low
+	dw 0x0000           ; base low
+	db 0x00             ; base middle
+	db 10010010b        ; access
+	db 00000000b        ; granularity
+	db 0x00             ; base high
+
 gdt_end:
 
 gdt_descriptor:
@@ -101,4 +124,5 @@ PD_table:
 	; map first 4 MB of memory using 2 MB pages
 	dq 0x0000000000000083 ; first 2 MB, present, read/write, 2 MB page
 	dq 0x0000000000200083 ; second 2 MB, present, read/write, 2 MB page
-	times 510 dq 0        ; zero rest of table
+	dq 0x0000000000400083 ; third 2 MB, present, read/write, 2 MB page
+	times 509 dq 0        ; zero rest of table
