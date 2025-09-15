@@ -1,6 +1,6 @@
 #include "kernel.h"
-// #include <stddef.h>
-// #include <stdint.h>
+#include <stddef.h>
+#include <stdint.h>
 // #include "idt/idt.h"
 // #include "io/io.h"
 // #include "memory/heap/kheap.h"
@@ -11,93 +11,93 @@
 // #include "disk/disk.h"
 // #include "fs/file.h"
 // #include "fs/pparser.h"
-// #include "string/string.h"
+#include "string/string.h"
 // #include "disk/streamer.h"
 // #include "gdt/gdt.h"
 // #include "task/tss.h"
-// #include "config.h"
-// #include "status.h"
+#include "config.h"
+#include "status.h"
 // #include "isr80h/isr80h.h"
 // #include "keyboard/keyboard.h"
 
-// uint16_t *video_mem = 0;
-// uint16_t terminal_row = 0;
-// uint16_t terminal_col = 0;
+uint16_t *video_mem = 0;
+uint16_t terminal_row = 0;
+uint16_t terminal_col = 0;
 
-// uint16_t terminal_make_char(char c, char color)
-// {
-// 	return (color << 8) | c;
-// }
+uint16_t terminal_make_char(char c, char color)
+{
+	return (color << 8) | c;
+}
 
-// void terminal_putchar(size_t x, size_t y, char c, char color)
-// {
-// 	video_mem[(y * VGA_WIDTH) + x] = terminal_make_char(c, color);
-// }
+void terminal_putchar(size_t x, size_t y, char c, char color)
+{
+	video_mem[(y * VGA_WIDTH) + x] = terminal_make_char(c, color);
+}
 
-// void terminal_backspace()
-// {
-// 	if (terminal_row == 0 && terminal_col == 0)
-// 	{
-// 		return;
-// 	}
+void terminal_backspace()
+{
+	if (terminal_row == 0 && terminal_col == 0)
+	{
+		return;
+	}
 
-// 	if (terminal_col == 0)
-// 	{
-// 		terminal_row -= 1;
-// 		terminal_col = VGA_WIDTH;
-// 	}
+	if (terminal_col == 0)
+	{
+		terminal_row -= 1;
+		terminal_col = VGA_WIDTH;
+	}
 
-// 	terminal_col -= 1;
-// 	terminal_writechar(' ', 15);
-// 	terminal_col -= 1;
-// }
+	terminal_col -= 1;
+	terminal_writechar(' ', 15);
+	terminal_col -= 1;
+}
 
-// void terminal_writechar(char c, char color)
-// {
-// 	if (c == '\n')
-// 	{
-// 		terminal_col = 0;
-// 		terminal_row += 1;
-// 		return;
-// 	}
+void terminal_writechar(char c, char color)
+{
+	if (c == '\n')
+	{
+		terminal_col = 0;
+		terminal_row += 1;
+		return;
+	}
 
-// 	if (c == 0x08) // backspace
-// 	{
-// 		terminal_backspace();
-// 		return;
-// 	}
+	if (c == 0x08) // backspace
+	{
+		terminal_backspace();
+		return;
+	}
 
-// 	terminal_putchar(terminal_col, terminal_row, c, color);
-// 	terminal_col += 1;
-// 	if (terminal_col >= VGA_WIDTH)
-// 	{
-// 		terminal_col = 0;
-// 		terminal_row += 1;
-// 	}
-// }
+	terminal_putchar(terminal_col, terminal_row, c, color);
+	terminal_col += 1;
+	if (terminal_col >= VGA_WIDTH)
+	{
+		terminal_col = 0;
+		terminal_row += 1;
+	}
+}
 
-// void terminal_init()
-// {
-// 	video_mem = (uint16_t *)(0xB8000);
-// 	terminal_row = 0;
-// 	terminal_col = 0;
-// 	for (size_t y = 0; y < VGA_HEIGHT; y++)
-// 	{
-// 		for (size_t x = 0; x < VGA_WIDTH; x++)
-// 		{
-// 			terminal_putchar(x, y, ' ', 0);
-// 		}
-// 	}
-// }
+void terminal_init()
+{
+	video_mem = (uint16_t *)(0xB8000);
+	terminal_row = 0;
+	terminal_col = 0;
+	for (size_t y = 0; y < VGA_HEIGHT; y++)
+	{
+		for (size_t x = 0; x < VGA_WIDTH; x++)
+		{
+			terminal_putchar(x, y, ' ', 0);
+		}
+	}
+}
 
-// void print(const char *str)
-// {
-// 	size_t len = strlen(str);
-// 	for (size_t i = 0; i < len; i++)
-// 	{
-// 		terminal_writechar(str[i], 15);
-// 	}
-// }
+void print(const char *str)
+{
+	size_t len = strlen(str);
+	for (size_t i = 0; i < len; i++)
+	{
+		terminal_writechar(str[i], 15);
+	}
+}
 
 // static struct paging_4gb_chunk *kernel_chunk = 0;
 
@@ -128,7 +128,8 @@
 
 void kernel_main()
 {
-	// terminal_init();
+	terminal_init();
+	print("Welcome to MyOS on 64-bit mode!\n");
 
 	// memset(gdt_real, 0x00, sizeof(gdt_real));
 	// gdt_structured_to_gdt(gdt_real, gdt_structured, MYOS_TOTAL_GDT_SEGMENTS);
