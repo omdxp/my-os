@@ -119,10 +119,15 @@ PDPT_table:
 	dq PD_table + 0x03   ; present, read/write
 	times 511 dq 0       ; zero rest of table
 
+%define PS_FLAG 0x83            ; present, read/write, 2 MB page
+%define PAGE_INCREMENT 0x200000 ; 2 MB
+
 align 4096
 PD_table:
-	; map first 4 MB of memory using 2 MB pages
-	dq 0x0000000000000083 ; first 2 MB, present, read/write, 2 MB page
-	dq 0x0000000000200083 ; second 2 MB, present, read/write, 2 MB page
-	dq 0x0000000000400083 ; third 2 MB, present, read/write, 2 MB page
+    ; identity map first 128 MB of physical memory using 2 MB pages
+	%assign addr 0x00000000 ; start of physical memory
+	%rep 65                 ; number of pages to map (65 * 2MB = 128MB)
+		dq addr + PS_FLAG
+		%assign addr addr + PAGE_INCREMENT
+	%endrep
 	times 509 dq 0        ; zero rest of table

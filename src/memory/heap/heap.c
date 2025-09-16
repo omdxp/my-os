@@ -21,7 +21,7 @@ out:
 
 static bool heap_validate_alignment(void *ptr)
 {
-	return ((unsigned int)ptr % MYOS_HEAP_BLOCK_SIZE) == 0;
+	return ((uintptr_t)ptr % MYOS_HEAP_BLOCK_SIZE) == 0;
 }
 
 int heap_create(struct heap *heap, void *ptr, void *end, struct heap_table *table)
