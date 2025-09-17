@@ -1,23 +1,17 @@
-[BITS 32]
+[BITS 64]
 
 section .asm
 
 global paging_load_directory
-global enable_paging
+global paging_invalidate_tlb_entry
 
+; void paging_load_directory(uintptr_t *directory);
 paging_load_directory:
-	push ebp
-	mov ebp, esp
-	mov eax, [ebp+8]
-	mov cr3, eax
-	pop ebp
+	mov rax, rdi ; load first argument (directory) into rax
+	mov cr3, rax ; load page directory base register
 	ret
 
-enable_paging:
-	push ebp
-	mov ebp, esp
-	mov eax, cr0
-	or eax, 0x80000000
-	mov cr0, eax
-	pop ebp
+; void paging_invalidate_tlb_entry(uintptr_t addr);
+paging_invalidate_tlb_entry:
+	invlpg [rdi] ; invalidate TLB entry for the given address
 	ret

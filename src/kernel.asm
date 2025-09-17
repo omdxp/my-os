@@ -108,29 +108,23 @@ gdt_descriptor:
 	dw gdt_end - gdt - 1 ; size of GDT
 	dd gdt               ; address of GDT
 
-%define PS_FLAG 0x03           ; present, read/write flag for 4 MB pages
-%define PAGE_INCREMENT 0x1000  ; 4 MB increment for page directory entries
 
 ; page table definitions
 align 4096
 PML4_table:
-	dq PDPT_table + PS_FLAG ; present, read/write
+	dq PDPT_table + 0x03 ; present, read/write
 	times 511 dq 0       	; zero rest of table
 
 align 4096
 PDPT_table:
-	dq PD_table + PS_FLAG ; present, read/write
+	dq PD_table + 0x03 ; present, read/write
 	times 511 dq 0        ; zero rest of table
 
 align 4096
 PD_table:
-	dq PT_table + PS_FLAG ; present, read/write, 4 MB page
-	times 511 dq 0        ; zero rest of table
-
-align 4096
-PT_table:
 	%assign addr 0x00000000 ; start of physical memory
-	%rep 512                ; number of pages
-		dq addr + PS_FLAG
-		%assign addr addr + PAGE_INCREMENT
+	%rep 512
+		dq addr + 0x83
+		%assign addr addr + 0x200000 ; next 2 MB
 	%endrep
+

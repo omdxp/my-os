@@ -5,7 +5,7 @@
 // #include "io/io.h"
 #include "memory/heap/kheap.h"
 #include "memory/memory.h"
-// #include "memory/paging/paging.h"
+#include "memory/paging/paging.h"
 // #include "task/task.h"
 // #include "task/process.h"
 // #include "disk/disk.h"
@@ -126,30 +126,58 @@ void print(const char *str)
 // 	{.base = (uint32_t)&tss, .limit = sizeof(tss), .type = 0xe9}, // TSS segment
 // };
 
+// page descriptor for 64-bit paging
+struct paging_desc *kernel_paging_desc = 0;
+
 void kernel_main()
 {
 	terminal_init();
 	print("Welcome to MyOS on 64-bit mode!\n");
 
-	// kheap_init();
-	// char *ptr = kmalloc(50);
-	// ptr[0] = 'H';
-	// ptr[1] = 'e';
-	// ptr[2] = 'l';
-	// ptr[3] = 'l';
-	// ptr[4] = 'o';
-	// ptr[5] = ',';
-	// ptr[6] = ' ';
-	// ptr[7] = 'W';
-	// ptr[8] = 'o';
-	// ptr[9] = 'r';
-	// ptr[10] = 'l';
-	// ptr[11] = 'd';
-	// ptr[12] = '!';
-	// ptr[13] = '\n';
-	// ptr[14] = '\0';
-	// print(ptr);
-	// kfree(ptr);
+	kheap_init();
+	char *ptr = kmalloc(50);
+	ptr[0] = 'H';
+	ptr[1] = 'e';
+	ptr[2] = 'l';
+	ptr[3] = 'l';
+	ptr[4] = 'o';
+	ptr[5] = ',';
+	ptr[6] = ' ';
+	ptr[7] = 'W';
+	ptr[8] = 'o';
+	ptr[9] = 'r';
+	ptr[10] = 'l';
+	ptr[11] = 'd';
+	ptr[12] = '!';
+	ptr[13] = '\n';
+	ptr[14] = '\0';
+	print(ptr);
+
+	kernel_paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
+	// map first 419 MB of memory to the first 419 MB of physical memory
+	paging_map_range(kernel_paging_desc, (void *)0x00000000,
+					 (void *)0x00000000, 1024 * 100,
+					 PAGING_IS_PRESENT | PAGING_IS_WRITEABLE);
+	paging_switch(kernel_paging_desc);
+	ptr[0] = 'P';
+	ptr[1] = 'a';
+	ptr[2] = 'g';
+	ptr[3] = 'i';
+	ptr[4] = 'n';
+	ptr[5] = 'g';
+	ptr[6] = ' ';
+	ptr[7] = 'E';
+	ptr[8] = 'n';
+	ptr[9] = 'a';
+	ptr[10] = 'b';
+	ptr[11] = 'l';
+	ptr[12] = 'e';
+	ptr[13] = 'd';
+	ptr[14] = '!';
+	ptr[15] = '\n';
+	ptr[16] = '\0';
+	print(ptr);
+	kfree(ptr);
 
 	// memset(gdt_real, 0x00, sizeof(gdt_real));
 	// gdt_structured_to_gdt(gdt_real, gdt_structured, MYOS_TOTAL_GDT_SEGMENTS);
