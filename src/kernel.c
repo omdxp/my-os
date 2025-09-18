@@ -140,6 +140,10 @@ void kernel_main()
 	terminal_init();
 	print("Welcome to MyOS on 64-bit mode!\n");
 
+	print("Total accessible memory: ");
+	print(itoa((int)e820_total_accessible_memory()));
+	print(" bytes\n");
+
 	kheap_init(MYOS_HEAP_SIZE_BYTES);
 	char *ptr = kmalloc(50);
 	ptr[0] = 'H';

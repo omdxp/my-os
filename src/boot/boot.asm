@@ -40,7 +40,18 @@ step2:
 	mov ds, ax
 	mov es, ax
 	mov ss, ax
+	mov fs, ax
+	mov es, ax
+
+	; enable the A20 line
+	in al, 0x92
+	or al, 00000010b
+	out 0x92, al
+
+	; setup stack
 	mov sp, 0x7c00
+	call load_memory_map
+
 	sti ; enable interrupts
 
 .load_protected:
@@ -80,6 +91,37 @@ gdt_end:
 gdt_descriptor:
 	dw gdt_end - gdt_start - 1
 	dd gdt_start
+
+load_memory_map:
+	mov word [total_memory_map_entries], 0
+	mov di, 0x7e00 ; memory map will be stored here (e820 specification)
+	mov cx, 24     ; size of each entry (24 bytes)
+	xor bx, bx     ; continuation value should be 0 for the first call
+
+	; set eax, edx ready for e820 call
+	o32 mov eax, 0xE820
+	o32 mov edx, 0x534D4150 ; 'SMAP'
+.get_e820_entry:
+	int 0x15 ; call BIOS interrupt
+	jc .done ; if carry flag is set, we are done
+
+	; check if the returned entry is valid
+	o32 cmp eax, 0x534D4150
+	jne .done ; if not, we are done
+
+	inc word [total_memory_map_entries]
+
+	o32 mov eax, 0xE820
+	mov cx, 24
+
+	; increment to the next entry
+	add di, cx
+
+	; check if we need to get more entries
+	test bx, bx
+	jnz .get_e820_entry
+.done:
+	ret
 
 [BITS 32]
 load32:
@@ -149,4 +191,5 @@ ata_lba_read:
 	ret
 
 times 510-($ - $$) db 0
+total_memory_map_entries:
 dw 0xAA55
