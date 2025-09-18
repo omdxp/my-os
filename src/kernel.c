@@ -101,13 +101,12 @@ void print(const char *str)
 
 // static struct paging_4gb_chunk *kernel_chunk = 0;
 
-// void panic(const char *msg)
-// {
-// 	print(msg);
-// 	while (42)
-// 	{
-// 	}
-// }
+void panic(const char *msg)
+{
+	print(msg);
+	while (42)
+		;
+}
 
 // void kernel_page()
 // {
@@ -128,6 +127,12 @@ void print(const char *str)
 
 // page descriptor for 64-bit paging
 struct paging_desc *kernel_paging_desc = 0;
+
+void kernel_page()
+{
+	kernel_registers();
+	paging_switch(kernel_paging_desc);
+}
 
 void kernel_main()
 {

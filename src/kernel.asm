@@ -1,6 +1,7 @@
 [BITS 32]
 
 global _start
+global kernel_registers
 extern kernel_main
 
 ; segment selectors
@@ -49,6 +50,15 @@ _start:
 	jmp LONG_MODE_CODE_SEG:long_mode_entry
 
 [BITS 64]
+kernel_registers:
+	; set up segment registers for 64-bit mode
+	mov ax, LONG_MODE_DATA_SEG
+	mov ds, ax
+	mov es, ax
+	mov gs, ax
+	mov fs, ax
+	ret
+
 long_mode_entry:
 	mov ax, LONG_MODE_DATA_SEG
 	mov ds, ax
