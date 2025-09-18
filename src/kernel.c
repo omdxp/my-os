@@ -4,6 +4,7 @@
 // #include "idt/idt.h"
 // #include "io/io.h"
 #include "memory/heap/kheap.h"
+#include "memory/heap/heap.h"
 #include "memory/memory.h"
 #include "memory/paging/paging.h"
 // #include "task/task.h"
@@ -139,7 +140,7 @@ void kernel_main()
 	terminal_init();
 	print("Welcome to MyOS on 64-bit mode!\n");
 
-	kheap_init();
+	kheap_init(MYOS_HEAP_SIZE_BYTES);
 	char *ptr = kmalloc(50);
 	ptr[0] = 'H';
 	ptr[1] = 'e';
@@ -183,6 +184,20 @@ void kernel_main()
 	ptr[16] = '\0';
 	print(ptr);
 	kfree(ptr);
+
+	struct heap *kheap = kheap_get();
+	size_t heap_size = heap_total_size(kheap);
+	size_t heap_used = heap_total_used(kheap);
+	size_t heap_avail = heap_total_available(kheap);
+	print("Heap total size: ");
+	print(itoa((int)heap_size));
+	print(" bytes\n");
+	print("Heap used: ");
+	print(itoa((int)heap_used));
+	print(" bytes\n");
+	print("Heap available: ");
+	print(itoa((int)heap_avail));
+	print(" bytes\n");
 
 	// memset(gdt_real, 0x00, sizeof(gdt_real));
 	// gdt_structured_to_gdt(gdt_real, gdt_structured, MYOS_TOTAL_GDT_SEGMENTS);

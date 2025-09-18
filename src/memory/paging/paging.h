@@ -66,6 +66,7 @@ int paging_map(struct paging_desc *desc, void *virt, void *phys, int flags);
 void *paging_align_to_lower_page(void *addr);
 void *paging_align_address(void *ptr);
 struct paging_desc *paging_desc_new(paging_map_level_t level);
+bool paging_is_aligned(void *addr);
 
 void paging_load_directory(uintptr_t *directory);
 void paging_invalidate_tlb_entry(uintptr_t addr);

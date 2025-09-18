@@ -16,3 +16,4 @@ char *strstr(const char *haystack, const char *needle);
 char *strcat(char *dest, const char *src);
 char *strncat(char *dest, const char *src, int count);
 char *strrchr(const char *s, int c);
+char *itoa(int i);
