@@ -124,15 +124,6 @@ user_programs:
 	cd ./programs/echo && $(MAKE) all
 	cd ./programs/shell && $(MAKE) all
 
-user_programs_clean:
-	cd ./programs/stdlib && $(MAKE) clean
-	cd ./programs/blank && $(MAKE) clean
-	cd ./programs/echo && $(MAKE) clean
-	cd ./programs/shell && $(MAKE) clean
-
-clean: user_programs_clean
-	rm -rf ./bin/boot.bin
-	rm -rf ./bin/kernel.bin
-	rm -rf ./bin/os.bin
-	rm -rf $(FILES)
-	rm -rf ./build/kernelfull.o
+clean:
+	find . -name '*.o' -delete
+	find . -name '*.bin' -delete
