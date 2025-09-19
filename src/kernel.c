@@ -144,7 +144,7 @@ void kernel_main()
 	print(itoa((int)e820_total_accessible_memory()));
 	print(" bytes\n");
 
-	kheap_init(MYOS_HEAP_SIZE_BYTES);
+	kheap_init();
 	char *ptr = kmalloc(50);
 	ptr[0] = 'H';
 	ptr[1] = 'e';
@@ -163,45 +163,45 @@ void kernel_main()
 	ptr[14] = '\0';
 	print(ptr);
 
-	kernel_paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
-	// map first 419 MB of memory to the first 419 MB of physical memory
-	paging_map_range(kernel_paging_desc, (void *)0x00000000,
-					 (void *)0x00000000, 1024 * 100,
-					 PAGING_IS_PRESENT | PAGING_IS_WRITEABLE);
-	paging_switch(kernel_paging_desc);
-	ptr[0] = 'P';
-	ptr[1] = 'a';
-	ptr[2] = 'g';
-	ptr[3] = 'i';
-	ptr[4] = 'n';
-	ptr[5] = 'g';
-	ptr[6] = ' ';
-	ptr[7] = 'E';
-	ptr[8] = 'n';
-	ptr[9] = 'a';
-	ptr[10] = 'b';
-	ptr[11] = 'l';
-	ptr[12] = 'e';
-	ptr[13] = 'd';
-	ptr[14] = '!';
-	ptr[15] = '\n';
-	ptr[16] = '\0';
-	print(ptr);
-	kfree(ptr);
+	// kernel_paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
+	// // map first 419 MB of memory to the first 419 MB of physical memory
+	// paging_map_range(kernel_paging_desc, (void *)0x00000000,
+	// 				 (void *)0x00000000, 1024 * 100,
+	// 				 PAGING_IS_PRESENT | PAGING_IS_WRITEABLE);
+	// paging_switch(kernel_paging_desc);
+	// ptr[0] = 'P';
+	// ptr[1] = 'a';
+	// ptr[2] = 'g';
+	// ptr[3] = 'i';
+	// ptr[4] = 'n';
+	// ptr[5] = 'g';
+	// ptr[6] = ' ';
+	// ptr[7] = 'E';
+	// ptr[8] = 'n';
+	// ptr[9] = 'a';
+	// ptr[10] = 'b';
+	// ptr[11] = 'l';
+	// ptr[12] = 'e';
+	// ptr[13] = 'd';
+	// ptr[14] = '!';
+	// ptr[15] = '\n';
+	// ptr[16] = '\0';
+	// print(ptr);
+	// kfree(ptr);
 
-	struct heap *kheap = kheap_get();
-	size_t heap_size = heap_total_size(kheap);
-	size_t heap_used = heap_total_used(kheap);
-	size_t heap_avail = heap_total_available(kheap);
-	print("Heap total size: ");
-	print(itoa((int)heap_size));
-	print(" bytes\n");
-	print("Heap used: ");
-	print(itoa((int)heap_used));
-	print(" bytes\n");
-	print("Heap available: ");
-	print(itoa((int)heap_avail));
-	print(" bytes\n");
+	// struct heap *kheap = kheap_get();
+	// size_t heap_size = heap_total_size(kheap);
+	// size_t heap_used = heap_total_used(kheap);
+	// size_t heap_avail = heap_total_available(kheap);
+	// print("Heap total size: ");
+	// print(itoa((int)heap_size));
+	// print(" bytes\n");
+	// print("Heap used: ");
+	// print(itoa((int)heap_used));
+	// print(" bytes\n");
+	// print("Heap available: ");
+	// print(itoa((int)heap_avail));
+	// print(" bytes\n");
 
 	// memset(gdt_real, 0x00, sizeof(gdt_real));
 	// gdt_structured_to_gdt(gdt_real, gdt_structured, MYOS_TOTAL_GDT_SEGMENTS);

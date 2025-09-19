@@ -1,0 +1,30 @@
+#pragma once
+
+#include "heap.h"
+
+enum
+{
+	MULTIHEAP_HEAP_FLAG_EXTERNALLY_OWNED = 0x01,	   // heap memory is owned by external entity and should not be freed
+	MULTIHEAP_HEAP_FLAG_DEFRAGMENT_WITH_PAGING = 0x02, // defragmentation can use paging to move pages around
+};
+
+struct multiheap_single_heap
+{
+	struct heap *heap;
+	int flags;
+	struct multiheap_single_heap *next;
+};
+
+struct multiheap
+{
+	struct heap *starting_heap;					   // used to allocate soace for multiheap
+	struct multiheap_single_heap *first_multiheap; // linked list of heaps
+	size_t total_heaps;							   // total number of heaps
+};
+
+int multiheap_add_existing_heap(struct multiheap *mh, struct heap *heap, int flags);
+int multiheap_add(struct multiheap *mh, void *saddr, void *eaddr, int flags);
+void *multiheap_alloc(struct multiheap *mh, size_t size);
+void *multiheap_palloc(struct multiheap *mh, size_t size);
+struct multiheap *multiheap_new(struct heap *starting_heap);
+void multiheap_free(struct multiheap *mh);

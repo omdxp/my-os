@@ -1,9 +1,24 @@
 #include "memory.h"
 #include "config.h"
 
+size_t e820_total_entries()
+{
+	return *(uint16_t *)MYOS_MEMORY_MAP_TOTAL_ENTRIES_LOCATION;
+}
+
+struct e820_entry *e820_entry(size_t index)
+{
+	if (index >= e820_total_entries())
+	{
+		return NULL;
+	}
+	struct e820_entry *entries = (struct e820_entry *)MYOS_MEMORY_MAP_LOCATION;
+	return &entries[index];
+}
+
 struct e820_entry *e820_largest_free_entry()
 {
-	size_t total_memory_entries = *(uint16_t *)MYOS_MEMORY_MAP_TOTAL_ENTRIES_LOCATION;
+	size_t total_memory_entries = e820_total_entries();
 	struct e820_entry *entries = (struct e820_entry *)MYOS_MEMORY_MAP_LOCATION;
 
 	// care only about long contiguous free memory regions
@@ -30,7 +45,7 @@ struct e820_entry *e820_largest_free_entry()
 
 size_t e820_total_accessible_memory()
 {
-	size_t total_memory_entries = *(uint16_t *)MYOS_MEMORY_MAP_TOTAL_ENTRIES_LOCATION;
+	size_t total_memory_entries = e820_total_entries();
 	struct e820_entry *entries = (struct e820_entry *)MYOS_MEMORY_MAP_LOCATION;
 
 	size_t total_accessible_memory = 0;

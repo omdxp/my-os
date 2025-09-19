@@ -10,8 +10,16 @@
 
 #define MYOS_HEAP_SIZE_BYTES 104857600 // 100MB heap size
 #define MYOS_HEAP_BLOCK_SIZE 4096
-#define MYOS_HEAP_ADDRESS 0x01000000
-#define MYOS_HEAP_TABLE_ADDRESS 0x00007E00
+
+// Minimum address for the heap (just after 16MB mark)
+// This is to avoid conflicts with the kernel and other reserved areas.
+#define MYOS_MINIMAL_HEAP_ADDRESS 0x01100000
+
+// Minimum heao table start address (just after 16MB + heap size)
+#define MYOS_MINIMAL_HEAP_TABLE_ADDRESS 0x01000000
+
+// Size of the heap table
+#define MYOS_MINIMAL_HEAP_TABLE_SIZE MYOS_MINIMAL_HEAP_ADDRESS - MYOS_MINIMAL_HEAP_TABLE_ADDRESS
 
 #define MYOS_SECTOR_SIZE 512
 

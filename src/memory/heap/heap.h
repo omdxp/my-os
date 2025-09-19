@@ -22,11 +22,14 @@ struct heap
 {
 	struct heap_table *table;
 	void *saddr; // start address of the heap data pool
+	void *eaddr; // end address of the heap data pool
 };
 
 int heap_create(struct heap *heap, void *ptr, void *end, struct heap_table *table);
 void *heap_malloc(struct heap *heap, size_t size);
 void heap_free(struct heap *heap, void *ptr);
+void *heap_zalloc(struct heap *heap, size_t size);
+
 size_t heap_total_size(struct heap *heap);
 size_t heap_total_used(struct heap *heap);
 size_t heap_total_available(struct heap *heap);
