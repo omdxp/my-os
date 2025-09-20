@@ -20,6 +20,7 @@ struct multiheap
 	struct heap *starting_heap;					   // used to allocate soace for multiheap
 	struct multiheap_single_heap *first_multiheap; // linked list of heaps
 	size_t total_heaps;							   // total number of heaps
+	void *max_end_data_addr;					   // maximum end address of all heaps
 };
 
 int multiheap_add_existing_heap(struct multiheap *mh, struct heap *heap, int flags);

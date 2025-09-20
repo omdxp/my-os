@@ -3,6 +3,7 @@
 #include "config.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #define HEAP_BLOCK_TABLE_ENTRY_TAKEN 0x01
 #define HEAP_BLOCK_TABLE_ENTRY_FREE 0x00
@@ -33,6 +34,7 @@ void *heap_zalloc(struct heap *heap, size_t size);
 size_t heap_total_size(struct heap *heap);
 size_t heap_total_used(struct heap *heap);
 size_t heap_total_available(struct heap *heap);
+bool heap_is_address_within_heap(struct heap *heap, void *addr);
 
 uintptr_t heap_align_value_to_upper(uintptr_t val);
 uintptr_t heap_align_value_to_lower(uintptr_t val);

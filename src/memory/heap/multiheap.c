@@ -1,6 +1,9 @@
 #include "multiheap.h"
 #include "kernel.h"
 #include "status.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 struct multiheap *multiheap_new(struct heap *starting_heap)
 {
@@ -37,6 +40,51 @@ struct multiheap_single_heap *multiheap_get_last_heap(struct multiheap *mh)
 		current = current->next;
 	}
 	return current;
+}
+
+static bool multiheap_heap_allows_paging(struct multiheap_single_heap *mhs)
+{
+	return mhs->flags & MULTIHEAP_HEAP_FLAG_DEFRAGMENT_WITH_PAGING;
+}
+
+void *multiheap_get_max_memory_end_address(struct multiheap *mh)
+{
+	void *max_addr = 0x00;
+	struct multiheap_single_heap *current = mh->first_multiheap;
+	while (current)
+	{
+		if (current->heap->eaddr >= max_addr)
+		{
+			max_addr = current->heap->eaddr;
+		}
+		current = current->next;
+	}
+	return max_addr;
+}
+
+struct multiheap_single_heap *multiheap_get_heap_for_address(struct multiheap *mh, void *addr)
+{
+	struct multiheap_single_heap *current = mh->first_multiheap;
+	while (current)
+	{
+		if (heap_is_address_within_heap(current->heap, addr))
+		{
+			return current;
+		}
+		current = current->next;
+	}
+	return NULL;
+}
+
+bool multiheap_is_address_virtual(struct multiheap *mh, void *addr)
+{
+	return addr >= mh->max_end_data_addr;
+}
+
+void *multiheap_virtual_address_to_physical(struct multiheap *mh, void *addr)
+{
+	void *phys_addr = (void *)((uintptr_t)addr - (uintptr_t)mh->max_end_data_addr);
+	return phys_addr;
 }
 
 int multiheap_add_heap(struct multiheap *mh, struct heap *heap, int flags)
