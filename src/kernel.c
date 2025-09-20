@@ -164,9 +164,21 @@ void kernel_main()
 	print(ptr);
 
 	kernel_paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
+	if (!kernel_paging_desc)
+	{
+		panic("kernel_main: paging_desc_new failed\n");
+	}
+
 	paging_map_e820_memory_regions(kernel_paging_desc);
 
-	// paging_switch(kernel_paging_desc);
+	paging_switch(kernel_paging_desc);
+
+	for (;;)
+	{
+		if (!kmalloc(4096))
+			break;
+	}
+	print("Allocated 4KB\n");
 	// ptr[0] = 'P';
 	// ptr[1] = 'a';
 	// ptr[2] = 'g';

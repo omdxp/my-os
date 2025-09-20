@@ -36,6 +36,7 @@ void kheap_init()
 	}
 
 	void *address = (void *)entry->base_addr;
+	void *end_address = (void *)(entry->base_addr + entry->length);
 	void *heap_table_address = address;
 	if (heap_table_address < (void *)MYOS_MINIMAL_HEAP_TABLE_ADDRESS)
 	{
@@ -43,7 +44,7 @@ void kheap_init()
 	}
 
 	void *heap_address = heap_table_address + MYOS_MINIMAL_HEAP_TABLE_SIZE;
-	void *heap_end_address = heap_address + MYOS_HEAP_SIZE_BYTES;
+	void *heap_end_address = end_address;
 	if (!paging_is_aligned(heap_address))
 	{
 		heap_address = paging_align_address(heap_address);
@@ -94,6 +95,16 @@ void kheap_init()
 			if (!paging_is_aligned(end_addr))
 			{
 				end_addr = paging_align_to_lower_page(end_addr);
+			}
+
+			if (base_addr < (void *)MYOS_MINIMAL_HEAP_ADDRESS)
+			{
+				base_addr = (void *)MYOS_MINIMAL_HEAP_ADDRESS;
+			}
+
+			if (end_addr <= base_addr)
+			{
+				continue;
 			}
 
 			multiheap_add(kernel_multiheap, (void *)base_addr, (void *)end_addr, MULTIHEAP_HEAP_FLAG_DEFRAGMENT_WITH_PAGING);

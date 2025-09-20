@@ -139,6 +139,7 @@ int paging_map(struct paging_desc *desc, void *virt, void *phys, int flags)
 
 int paging_map_e820_memory_regions(struct paging_desc *desc)
 {
+	paging_map_to(desc, (void *)0x00, (void *)0x00, (void *)0x100000, PAGING_IS_PRESENT | PAGING_IS_WRITEABLE);
 	size_t total_entries = e820_total_entries();
 	for (size_t i = 0; i < total_entries; i++)
 	{

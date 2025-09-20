@@ -50,7 +50,7 @@ out:
 	return res;
 }
 
-static uint32_t heap_align_value_to_upper(uint32_t val)
+static uintptr_t heap_align_value_to_upper(uintptr_t val)
 {
 	if ((val % MYOS_HEAP_BLOCK_SIZE) == 0)
 	{
@@ -67,11 +67,11 @@ static int heap_get_entry_type(HEAP_BLOCK_TABLE_ENTRY entry)
 	return entry & 0x0f;
 }
 
-int heap_get_start_block(struct heap *heap, uint32_t total_blocks)
+int64_t heap_get_start_block(struct heap *heap, uintptr_t total_blocks)
 {
 	struct heap_table *table = heap->table;
-	int bc = 0;
-	int bs = -1;
+	int64_t bc = 0;
+	int64_t bs = -1;
 
 	for (size_t i = 0; i < table->total; i++)
 	{
@@ -94,7 +94,7 @@ int heap_get_start_block(struct heap *heap, uint32_t total_blocks)
 		}
 	}
 
-	if (bs == -1)
+	if (bc != total_blocks)
 	{
 		return -ENOMEM;
 	}
@@ -102,14 +102,14 @@ int heap_get_start_block(struct heap *heap, uint32_t total_blocks)
 	return bs;
 }
 
-void *heap_block_to_address(struct heap *heap, int block)
+void *heap_block_to_address(struct heap *heap, int64_t block)
 {
 	return heap->saddr + (block * MYOS_HEAP_BLOCK_SIZE);
 }
 
-void heap_mark_blocks_taken(struct heap *heap, int start_block, int total_blocks)
+void heap_mark_blocks_taken(struct heap *heap, int64_t start_block, int64_t total_blocks)
 {
-	int end_block = (start_block + total_blocks) - 1;
+	int64_t end_block = (start_block + total_blocks) - 1;
 
 	HEAP_BLOCK_TABLE_ENTRY entry = HEAP_BLOCK_TABLE_ENTRY_TAKEN | HEAP_BLOCK_IS_FIRST;
 	if (total_blocks > 1)
@@ -117,22 +117,22 @@ void heap_mark_blocks_taken(struct heap *heap, int start_block, int total_blocks
 		entry |= HEAP_BLOCK_HAS_NEXT;
 	}
 
-	for (int i = start_block; i <= end_block; i++)
+	for (int64_t i = start_block; i <= end_block; i++)
 	{
 		heap->table->entries[i] = entry;
 		entry = HEAP_BLOCK_TABLE_ENTRY_TAKEN;
-		if (i != end_block - 1)
+		if (i != end_block)
 		{
 			entry |= HEAP_BLOCK_HAS_NEXT;
 		}
 	}
 }
 
-void *heap_malloc_blocks(struct heap *heap, uint32_t total_blocks)
+void *heap_malloc_blocks(struct heap *heap, uintptr_t total_blocks)
 {
 	void *address = 0;
 
-	int start_block = heap_get_start_block(heap, total_blocks);
+	int64_t start_block = heap_get_start_block(heap, total_blocks);
 	if (start_block < 0)
 	{
 		goto out;
@@ -146,10 +146,10 @@ out:
 	return address;
 }
 
-void heap_mark_blocks_free(struct heap *heap, int starting_block)
+void heap_mark_blocks_free(struct heap *heap, int64_t starting_block)
 {
 	struct heap_table *table = heap->table;
-	for (int i = starting_block; i < (int)table->total; i++)
+	for (int64_t i = starting_block; i < (int64_t)table->total; i++)
 	{
 		HEAP_BLOCK_TABLE_ENTRY entry = table->entries[i];
 		table->entries[i] = HEAP_BLOCK_TABLE_ENTRY_FREE;
@@ -160,15 +160,15 @@ void heap_mark_blocks_free(struct heap *heap, int starting_block)
 	}
 }
 
-int heap_address_to_block(struct heap *heap, void *address)
+int64_t heap_address_to_block(struct heap *heap, void *address)
 {
-	return ((int)(address - heap->saddr)) / MYOS_HEAP_BLOCK_SIZE;
+	return ((int64_t)(address - heap->saddr)) / MYOS_HEAP_BLOCK_SIZE;
 }
 
 void *heap_malloc(struct heap *heap, size_t size)
 {
 	size_t aligned_size = heap_align_value_to_upper(size);
-	uint32_t total_blocks = aligned_size / MYOS_HEAP_BLOCK_SIZE;
+	int64_t total_blocks = aligned_size / MYOS_HEAP_BLOCK_SIZE;
 	return heap_malloc_blocks(heap, total_blocks);
 }
 
