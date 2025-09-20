@@ -1,6 +1,7 @@
 #include "paging.h"
 #include "memory/heap/kheap.h"
 #include "memory/memory.h"
+#include "memory/heap/heap.h"
 #include "status.h"
 
 static struct paging_desc *current_paging_desc = NULL;
@@ -134,6 +135,33 @@ int paging_map(struct paging_desc *desc, void *virt, void *phys, int flags)
 	pt_entry->read_write = (flags & PAGING_IS_WRITEABLE) ? 1 : 0;
 
 	return res;
+}
+
+int paging_map_e820_memory_regions(struct paging_desc *desc)
+{
+	size_t total_entries = e820_total_entries();
+	for (size_t i = 0; i < total_entries; i++)
+	{
+		struct e820_entry *entry = e820_entry(i);
+		if (entry->type == 1) // only map usable RAM
+		{
+			void *base_addr = (void *)(void *)entry->base_addr;
+			void *end_addr = (void *)(void *)(entry->base_addr + entry->length);
+			if (!paging_is_aligned(base_addr))
+			{
+				base_addr = paging_align_address(base_addr);
+			}
+
+			if (!paging_is_aligned(end_addr))
+			{
+				end_addr = paging_align_to_lower_page(end_addr);
+			}
+
+			paging_map_to(desc, base_addr, base_addr, end_addr, PAGING_IS_PRESENT | PAGING_IS_WRITEABLE);
+		}
+	}
+
+	return 0;
 }
 
 int paging_map_range(struct paging_desc *desc, void *virt, void *phys, size_t count, int flags)

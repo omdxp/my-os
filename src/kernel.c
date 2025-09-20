@@ -163,11 +163,9 @@ void kernel_main()
 	ptr[14] = '\0';
 	print(ptr);
 
-	// kernel_paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
-	// // map first 419 MB of memory to the first 419 MB of physical memory
-	// paging_map_range(kernel_paging_desc, (void *)0x00000000,
-	// 				 (void *)0x00000000, 1024 * 100,
-	// 				 PAGING_IS_PRESENT | PAGING_IS_WRITEABLE);
+	kernel_paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
+	paging_map_e820_memory_regions(kernel_paging_desc);
+
 	// paging_switch(kernel_paging_desc);
 	// ptr[0] = 'P';
 	// ptr[1] = 'a';
