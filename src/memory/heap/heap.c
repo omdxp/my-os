@@ -82,6 +82,12 @@ bool heap_is_address_within_heap(struct heap *heap, void *addr)
 	return addr >= heap->saddr && addr <= heap->eaddr;
 }
 
+void heap_callbacks_set(struct heap *heap, HEAP_BLOCK_ALLOCATED_CALBACK_FUNCTION allocated_callback, HEAP_BLOCK_FREED_CALLBACK_FUNCTION freed_callback)
+{
+	heap->block_allocated_callback = allocated_callback;
+	heap->block_freed_callback = freed_callback;
+}
+
 int64_t
 heap_get_start_block(struct heap *heap, uintptr_t total_blocks)
 {
@@ -141,6 +147,12 @@ void heap_mark_blocks_taken(struct heap *heap, int64_t start_block, int64_t tota
 		{
 			entry |= HEAP_BLOCK_HAS_NEXT;
 		}
+
+		void *address = heap_block_to_address(heap, i);
+		if (heap->block_allocated_callback)
+		{
+			address = heap->block_allocated_callback(address, MYOS_HEAP_BLOCK_SIZE);
+		}
 	}
 }
 
@@ -172,6 +184,11 @@ void heap_mark_blocks_free(struct heap *heap, int64_t starting_block)
 		if (!(entry & HEAP_BLOCK_HAS_NEXT))
 		{
 			break;
+		}
+		void *address = heap_block_to_address(heap, i);
+		if (heap->block_freed_callback)
+		{
+			heap->block_freed_callback(address);
 		}
 	}
 }
