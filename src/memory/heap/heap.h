@@ -33,3 +33,6 @@ void *heap_zalloc(struct heap *heap, size_t size);
 size_t heap_total_size(struct heap *heap);
 size_t heap_total_used(struct heap *heap);
 size_t heap_total_available(struct heap *heap);
+
+uintptr_t heap_align_value_to_upper(uintptr_t val);
+uintptr_t heap_align_value_to_lower(uintptr_t val);

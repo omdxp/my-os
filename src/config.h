@@ -8,7 +8,7 @@
 #define MYOS_MEMORY_MAP_LOCATION 0x7e00				  // 0x7e00 - 0x7dff (1 byte for total entries)
 #define MYOS_MEMORY_MAP_TOTAL_ENTRIES_LOCATION 0x7dfe // 2 bytes for total entries
 
-#define MYOS_HEAP_SIZE_BYTES 104857600 // 100MB heap size
+#define MYOS_HEAP_MINIMUM_SIZE_BYTES 104857600 // 100MB heap size
 #define MYOS_HEAP_BLOCK_SIZE 4096
 
 // Minimum address for the heap (just after 16MB mark)

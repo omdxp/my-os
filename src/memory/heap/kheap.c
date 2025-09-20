@@ -18,7 +18,7 @@ struct e820_entry *kheap_get_allowable_memory_region_for_minimal_heap()
 	for (size_t i = 0; i < total_entries; i++)
 	{
 		struct e820_entry *current = e820_entry(i);
-		if (current->type == 1 && current->length > MYOS_HEAP_SIZE_BYTES)
+		if (current->type == 1 && current->length > MYOS_HEAP_MINIMUM_SIZE_BYTES)
 		{
 			entry = current;
 			break;
@@ -43,8 +43,18 @@ void kheap_init()
 		heap_table_address = (void *)MYOS_MINIMAL_HEAP_TABLE_ADDRESS;
 	}
 
-	void *heap_address = heap_table_address + MYOS_MINIMAL_HEAP_TABLE_SIZE;
+	size_t total_heap_size = end_address - heap_table_address;
+	size_t total_heap_blocks = total_heap_size / MYOS_HEAP_BLOCK_SIZE;
+	size_t total_heap_entry_table_size = total_heap_blocks * sizeof(HEAP_BLOCK_TABLE_ENTRY);
+
+	size_t heap_data_size = total_heap_size - total_heap_entry_table_size;
+
+	size_t total_heap_data_blocks = heap_data_size / MYOS_HEAP_BLOCK_SIZE;
+	total_heap_entry_table_size = total_heap_data_blocks * sizeof(HEAP_BLOCK_TABLE_ENTRY);
+
+	void *heap_address = heap_table_address + total_heap_entry_table_size;
 	void *heap_end_address = end_address;
+
 	if (!paging_is_aligned(heap_address))
 	{
 		heap_address = paging_align_address(heap_address);
