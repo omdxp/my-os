@@ -244,3 +244,13 @@ void *heap_zalloc(struct heap *heap, size_t size)
 	memset(ptr, 0, size);
 	return ptr;
 }
+
+void *heap_kalloc(struct heap *heap, size_t size)
+{
+	void *ptr = heap_malloc(heap, size);
+	if (!ptr)
+	{
+		return 0;
+	}
+	return ptr;
+}

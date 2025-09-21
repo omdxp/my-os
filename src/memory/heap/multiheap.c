@@ -1,5 +1,6 @@
 #include "multiheap.h"
 #include "kernel.h"
+#include "memory/paging/paging.h"
 #include "status.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -183,6 +184,52 @@ void *multiheap_alloc_second_pass(struct multiheap *mh, size_t size)
 {
 	// TODO: implement defragmentation and allocation with paging here
 	return 0;
+}
+
+void multiheap_paging_heap_free_block(void *ptr)
+{
+	paging_map(paging_current_descriptor(), ptr, NULL, 0);
+}
+
+int multiheap_ready(struct multiheap *mh)
+{
+	int res = 0;
+	mh->flags |= MULTIHEAP_FLAG_IS_READY;
+
+	struct paging_desc *paging_desc = paging_current_descriptor();
+	if (!paging_desc)
+	{
+		panic("multiheap_ready: paging_current_descriptor failed\n");
+	}
+
+	void *max_end_addr = multiheap_get_max_memory_end_address(mh);
+	mh->max_end_data_addr = max_end_addr;
+
+	struct multiheap_single_heap *current = mh->first_multiheap;
+	while (current)
+	{
+		if (multiheap_heap_allows_paging(current))
+		{
+			void *paging_heap_starting_address = max_end_addr + (uint64_t)current->heap->saddr;
+			void *paging_heap_ending_address = max_end_addr + (uint64_t)current->heap->eaddr;
+
+			struct heap_table *paging_heap_table = heap_zalloc(mh->starting_heap, sizeof(struct heap_table));
+			paging_heap_table->entries = heap_zalloc(mh->starting_heap, sizeof(HEAP_BLOCK_TABLE_ENTRY) * current->heap->table->total);
+			paging_heap_table->total = current->heap->table->total;
+
+			struct heap *paging_heap = heap_kalloc(mh->starting_heap, sizeof(struct heap));
+			heap_create(paging_heap, paging_heap_starting_address, paging_heap_ending_address, paging_heap_table);
+
+			paging_map_to(paging_current_descriptor(), paging_heap_starting_address, paging_heap_starting_address, paging_heap_ending_address, 0);
+
+			heap_callbacks_set(paging_heap, NULL, multiheap_paging_heap_free_block);
+			current->paging_heap = paging_heap;
+		}
+
+	out:
+		current = current->next;
+	}
+	return res;
 }
 
 void *multiheap_alloc(struct multiheap *mh, size_t size)

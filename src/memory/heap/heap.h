@@ -37,6 +37,7 @@ int heap_create(struct heap *heap, void *ptr, void *end, struct heap_table *tabl
 void *heap_malloc(struct heap *heap, size_t size);
 void heap_free(struct heap *heap, void *ptr);
 void *heap_zalloc(struct heap *heap, size_t size);
+void *heap_kalloc(struct heap *heap, size_t size);
 
 size_t heap_total_size(struct heap *heap);
 size_t heap_total_used(struct heap *heap);

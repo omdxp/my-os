@@ -11,8 +11,14 @@ enum
 struct multiheap_single_heap
 {
 	struct heap *heap;
+	struct heap *paging_heap; // if defragmentation with paging is enabled, this is the paging heap
 	int flags;
 	struct multiheap_single_heap *next;
+};
+
+enum
+{
+	MULTIHEAP_FLAG_IS_READY = 0x01, // multiheap is ready to use
 };
 
 struct multiheap
@@ -20,6 +26,7 @@ struct multiheap
 	struct heap *starting_heap;					   // used to allocate soace for multiheap
 	struct multiheap_single_heap *first_multiheap; // linked list of heaps
 	size_t total_heaps;							   // total number of heaps
+	int flags;									   // multiheap flags
 	void *max_end_data_addr;					   // maximum end address of all heaps
 };
 
