@@ -27,6 +27,9 @@ struct heap
 	struct heap_table *table;										// pointer to the heap block table
 	void *saddr;													// start address of the heap data pool
 	void *eaddr;													// end address of the heap data pool
+	size_t total_blocks;											// total blocks in the heap
+	size_t free_blocks;												// total free blocks
+	size_t used_blocks;												// total used blocks
 	HEAP_BLOCK_ALLOCATED_CALBACK_FUNCTION block_allocated_callback; // called when a block is allocated
 	HEAP_BLOCK_FREED_CALLBACK_FUNCTION block_freed_callback;		// called when a block is freed
 };
@@ -37,7 +40,6 @@ int heap_create(struct heap *heap, void *ptr, void *end, struct heap_table *tabl
 void *heap_malloc(struct heap *heap, size_t size);
 void heap_free(struct heap *heap, void *ptr);
 void *heap_zalloc(struct heap *heap, size_t size);
-void *heap_kalloc(struct heap *heap, size_t size);
 
 int64_t heap_address_to_block(struct heap *heap, void *address);
 size_t heap_allocation_block_count(struct heap *heap, void *starting_address);

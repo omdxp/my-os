@@ -82,6 +82,16 @@ bool multiheap_is_address_virtual(struct multiheap *mh, void *addr)
 	return addr >= mh->max_end_data_addr;
 }
 
+bool multiheap_is_ready(struct multiheap *mh)
+{
+	return mh && (mh->flags & MULTIHEAP_FLAG_IS_READY);
+}
+
+bool multiheap_can_add_heap(struct multiheap *mh)
+{
+	return !multiheap_is_ready(mh);
+}
+
 void *multiheap_virtual_address_to_physical(struct multiheap *mh, void *addr)
 {
 	void *phys_addr = (void *)((uintptr_t)addr - (uintptr_t)mh->max_end_data_addr);
@@ -153,7 +163,7 @@ size_t multiheap_allocation_byte_count(struct multiheap *mh, void *ptr)
 
 int multiheap_add_heap(struct multiheap *mh, struct heap *heap, int flags)
 {
-	if (!mh || !heap)
+	if (!mh || !heap || !multiheap_can_add_heap(mh))
 	{
 		return -EINVARG;
 	}
@@ -272,10 +282,78 @@ void *multiheap_alloc_first_pass(struct multiheap *mh, size_t size)
 	return 0;
 }
 
+void *multiheap_alloc_paging(struct multiheap *mh, size_t size, struct multiheap_single_heap **out_eligible_heap)
+{
+	void *allocation_ptr = NULL;
+	size_t total_required_blocks = size / MYOS_HEAP_BLOCK_SIZE;
+	struct multiheap_single_heap *current = mh->first_multiheap;
+	while (current)
+	{
+		if (!multiheap_heap_allows_paging(current))
+		{
+			current = current->next;
+			continue;
+		}
+
+		if (current->heap->free_blocks < total_required_blocks)
+		{
+			current = current->next;
+			continue;
+		}
+
+		allocation_ptr = heap_malloc(current->paging_heap, size);
+		if (allocation_ptr)
+		{
+			if (out_eligible_heap)
+			{
+				*out_eligible_heap = current;
+			}
+			break;
+		}
+
+		current = current->next;
+	}
+
+	return allocation_ptr;
+}
+
 void *multiheap_alloc_second_pass(struct multiheap *mh, size_t size)
 {
-	// TODO: implement defragmentation and allocation with paging here
-	return 0;
+	void *allocation_ptr = NULL;
+	struct paging_desc *paging_desc = paging_current_descriptor();
+	if (!paging_desc)
+	{
+		panic("multiheap_alloc_second_pass: paging_current_descriptor failed\n");
+	}
+
+	size = heap_align_value_to_upper(size);
+	size_t total_blocks = size / MYOS_HEAP_BLOCK_SIZE;
+	struct multiheap_single_heap *chosen_real_heap = NULL;
+
+	void *defragmented_virtual_memory_saddr = multiheap_alloc_paging(mh, size, &chosen_real_heap);
+	if (!defragmented_virtual_memory_saddr)
+	{
+		allocation_ptr = NULL;
+		goto out;
+	}
+
+	void *defragmented_virtual_memory_current_addr = defragmented_virtual_memory_saddr;
+	allocation_ptr = defragmented_virtual_memory_saddr;
+
+	for (size_t i = 0; i < total_blocks; i++)
+	{
+		void *block_addr = heap_zalloc(chosen_real_heap->heap, MYOS_HEAP_BLOCK_SIZE);
+		if (!block_addr)
+		{
+			panic("multiheap_alloc_second_pass: heap_zalloc failed\n");
+		}
+
+		paging_map(paging_desc, defragmented_virtual_memory_current_addr, block_addr, PAGING_IS_PRESENT | PAGING_IS_WRITEABLE);
+		defragmented_virtual_memory_current_addr += (uint64_t)MYOS_HEAP_BLOCK_SIZE;
+	}
+
+out:
+	return allocation_ptr;
 }
 
 void multiheap_paging_heap_free_block(void *ptr)
@@ -309,7 +387,7 @@ int multiheap_ready(struct multiheap *mh)
 			paging_heap_table->entries = heap_zalloc(mh->starting_heap, sizeof(HEAP_BLOCK_TABLE_ENTRY) * current->heap->table->total);
 			paging_heap_table->total = current->heap->table->total;
 
-			struct heap *paging_heap = heap_kalloc(mh->starting_heap, sizeof(struct heap));
+			struct heap *paging_heap = heap_zalloc(mh->starting_heap, sizeof(struct heap));
 			heap_create(paging_heap, paging_heap_starting_address, paging_heap_ending_address, paging_heap_table);
 
 			paging_map_to(paging_current_descriptor(), paging_heap_starting_address, paging_heap_starting_address, paging_heap_ending_address, 0);
