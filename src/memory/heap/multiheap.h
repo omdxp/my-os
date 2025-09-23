@@ -35,4 +35,5 @@ int multiheap_add(struct multiheap *mh, void *saddr, void *eaddr, int flags);
 void *multiheap_alloc(struct multiheap *mh, size_t size);
 void *multiheap_palloc(struct multiheap *mh, size_t size);
 struct multiheap *multiheap_new(struct heap *starting_heap);
-void multiheap_free(struct multiheap *mh);
+void multiheap_free_heap(struct multiheap *mh);
+void multiheap_free(struct multiheap *mh, void *ptr);

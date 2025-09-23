@@ -39,6 +39,7 @@ void heap_free(struct heap *heap, void *ptr);
 void *heap_zalloc(struct heap *heap, size_t size);
 void *heap_kalloc(struct heap *heap, size_t size);
 
+int64_t heap_address_to_block(struct heap *heap, void *address);
 size_t heap_allocation_block_count(struct heap *heap, void *starting_address);
 size_t heap_total_size(struct heap *heap);
 size_t heap_total_used(struct heap *heap);

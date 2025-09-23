@@ -205,7 +205,36 @@ int multiheap_add(struct multiheap *mh, void *saddr, void *eaddr, int flags)
 	return multiheap_add_heap(mh, heap, flags);
 }
 
-void multiheap_free(struct multiheap *mh)
+void multiheap_free(struct multiheap *mh, void *ptr)
+{
+	struct multiheap_single_heap *paging_heap = NULL;
+	struct multiheap_single_heap *phys_heap = NULL;
+	void *real_phys_addr = NULL;
+
+	multiheap_get_heap_and_paging_heap_for_address(mh, ptr, &phys_heap, &paging_heap, &real_phys_addr);
+
+	if (paging_heap)
+	{
+		size_t total_blocks = heap_allocation_block_count(paging_heap->paging_heap, ptr);
+		size_t starting_block = heap_address_to_block(paging_heap->paging_heap, ptr);
+		size_t ending_block = starting_block + total_blocks;
+		for (size_t i = starting_block; i < ending_block; i++)
+		{
+			void *virt_addr_for_block = (void *)((uintptr_t)ptr) + (i * MYOS_HEAP_BLOCK_SIZE);
+			void *data_phys_addr = paging_get_physical_address(paging_current_descriptor(), virt_addr_for_block);
+
+			multiheap_free(mh, data_phys_addr);
+		}
+
+		heap_free(paging_heap->paging_heap, ptr);
+	}
+	else if (phys_heap)
+	{
+		heap_free(phys_heap->heap, real_phys_addr);
+	}
+}
+
+void multiheap_free_heap(struct multiheap *mh)
 {
 	if (!mh)
 	{
