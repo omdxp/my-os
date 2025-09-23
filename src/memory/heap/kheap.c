@@ -27,6 +27,11 @@ struct e820_entry *kheap_get_allowable_memory_region_for_minimal_heap()
 	return entry;
 }
 
+void kheap_post_paging()
+{
+	multiheap_ready(kernel_multiheap);
+}
+
 void kheap_init()
 {
 	struct e820_entry *entry = kheap_get_allowable_memory_region_for_minimal_heap();

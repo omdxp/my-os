@@ -173,12 +173,7 @@ void kernel_main()
 
 	paging_switch(kernel_paging_desc);
 
-	for (;;)
-	{
-		if (!kmalloc(4096))
-			break;
-	}
-	print("Allocated 4KB\n");
+	kheap_post_paging();
 	// ptr[0] = 'P';
 	// ptr[1] = 'a';
 	// ptr[2] = 'g';
