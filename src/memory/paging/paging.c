@@ -220,9 +220,62 @@ out:
 	return res;
 }
 
+struct paging_desc_entry *paging_get(struct paging_desc *desc, void *virt)
+{
+	if (!desc || !desc->pml)
+	{
+		return NULL;
+	}
+
+	uintptr_t va = (uintptr_t)virt;
+	size_t pml4_index = (va >> 39) & 0x1FF;
+	size_t pdpt_index = (va >> 30) & 0x1FF;
+	size_t pdt_index = (va >> 21) & 0x1FF;
+	size_t pt_index = (va >> 12) & 0x1FF;
+
+	struct paging_desc_entry *pml4_entry = &desc->pml->entries[pml4_index];
+	if (paging_null_entry(pml4_entry))
+	{
+		return NULL;
+	}
+
+	struct paging_desc_entry *pdpt_entries = (struct paging_desc_entry *)(((uintptr_t)(pml4_entry->address)) << 12);
+	if (paging_null_entry(pdpt_entries))
+	{
+		return NULL;
+	}
+
+	struct paging_desc_entry *pdpt_entry = &pdpt_entries[pdpt_index];
+	if (paging_null_entry(pdpt_entry))
+	{
+		return NULL;
+	}
+
+	struct paging_desc_entry *pdt_entries = (struct paging_desc_entry *)(((uintptr_t)(pdpt_entry->address)) << 12);
+	if (paging_null_entry(pdt_entries))
+	{
+		return NULL;
+	}
+
+	struct paging_desc_entry *pdt_entry = &pdt_entries[pdt_index];
+	if (paging_null_entry(pdt_entry))
+	{
+		return NULL;
+	}
+
+	struct paging_desc_entry *pt_entries = (struct paging_desc_entry *)(((uintptr_t)(pdt_entry->address)) << 12);
+	if (paging_null_entry(pt_entries))
+	{
+		return NULL;
+	}
+
+	struct paging_desc_entry *pt_entry = &pt_entries[pt_index];
+	return pt_entry;
+}
+
 void *paging_get_physical_address(struct paging_desc *desc, void *virt)
 {
-	struct paging_desc_entry *desc_entry = paging_get(desc, virt); // TODO: implement paging_get
+	struct paging_desc_entry *desc_entry = paging_get(desc, virt);
 	if (!desc_entry)
 	{
 		return NULL;
