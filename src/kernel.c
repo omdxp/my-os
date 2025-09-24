@@ -1,7 +1,7 @@
 #include "kernel.h"
 #include <stddef.h>
 #include <stdint.h>
-// #include "idt/idt.h"
+#include "idt/idt.h"
 // #include "io/io.h"
 #include "memory/heap/kheap.h"
 #include "memory/heap/heap.h"
@@ -135,6 +135,8 @@ void kernel_page()
 	paging_switch(kernel_paging_desc);
 }
 
+void div_test();
+
 void kernel_main()
 {
 	terminal_init();
@@ -174,6 +176,13 @@ void kernel_main()
 	paging_switch(kernel_paging_desc);
 
 	kheap_post_paging();
+
+	idt_init(); // initialize the interrupt descriptor table
+	print("IDT initialized!\n");
+
+	div_test();
+	print("Div test completed!\n"); // should not be printed
+
 	// ptr[0] = 'P';
 	// ptr[1] = 'a';
 	// ptr[2] = 'g';
