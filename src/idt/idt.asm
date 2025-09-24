@@ -1,3 +1,4 @@
+[BITS 64]
 section .asm
 
 extern int21h_handler
@@ -46,40 +47,34 @@ disable_interrupts:
 	ret
 
 idt_load:
-    push ebp
-    mov ebp, esp
-
-    mov ebx, [ebp+8]
-    lidt [ebx]
-    
-    pop ebp
+    mov rbx, rdi
+	lidt [rbx]
     ret
 
 no_interrupt:
 	pushad_macro
 	call no_interrupt_handler
 	popad_macro
-	iret
+	iretq
 
 %macro interrupt 1
 	global int%1
 	int%1:
 		; interrupt frame start
 		; already pushed by processor upon entry to this interrupt
-		; uint32_t ip;
-		; uint32_t cs;
-		; uint32_t flags;
-		; uint32_t sp;
-		; uint32_t ss;
+		; uint64_t ip;
+		; uint64_t cs;
+		; uint64_t flags;
+		; uint64_t sp;
+		; uint64_t ss;
 		; push general purpose registers to stack
 		pushad_macro
 		; interrupt frame end
-		push esp
-		push dword %1
+		mov rdi, %1
+		mov rsi, rsp
 		call interrupt_handler
-		add esp, 8
 		popad_macro
-		iret
+		iretq
 %endmacro
 
 %assign i 0
@@ -91,36 +86,35 @@ no_interrupt:
 isr80h_wrapper:
 	; interrupt frame start
 	; already pushed by processor upon entry to this interrupt
-	; uint32_t ip;
-	; uint32_t cs;
-	; uint32_t flags;
-	; uint32_t sp;
-	; uint32_t ss;
+	; uint64_t ip;
+	; uint64_t cs;
+	; uint64_t flags;
+	; uint64_t sp;
+	; uint64_t ss;
 	; push general purpose registers to stack
 	pushad_macro
 
 	; interrupt frame end
 
-	; push stack pointer to point to interrupt frame
-	push esp
+	; second argument: rsp (used as pointer to userland stack)
+	mov rsi, rsp
 
-	; eax has command to be pushed to isr80h_handler stack
-	push eax
+	; first argument: rax (syscall number)
+	mov rdi, rax
 	call isr80h_handler
-	mov dword[tmp_res], eax
-	add esp, 8 ; (8 bytes) = esp (4 bytes) + eax (4 bytes) (4 bytes in 32 bit system)
+	mov qword[tmp_res], rax
 
 	; restore general purpose registers for user land
 	popad_macro
-	mov eax, [tmp_res]
-	iretd
+	mov rax, [tmp_res]
+	iretq
 
 section .data
 ; stores result from isr80h_handler
-tmp_res: dd 0
+tmp_res: dq 0
 
 %macro interrupt_array_entry 1
-	dd int%1
+	dq int%1
 %endmacro
 
 interrupt_pointer_table:
