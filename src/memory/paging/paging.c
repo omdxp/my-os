@@ -18,6 +18,12 @@ struct paging_pml_entries *paging_pml4_entries_new()
 	return pml4;
 }
 
+static bool paging_null_entry(struct paging_desc_entry *entry)
+{
+	struct paging_desc_entry null_entry = {0};
+	return memcmp(entry, &null_entry, sizeof(struct paging_desc_entry)) == 0;
+}
+
 void paging_desc_entry_free(struct paging_desc_entry *table_entry, paging_map_level_t level)
 {
 	if (paging_null_entry(table_entry))
@@ -134,12 +140,6 @@ struct paging_desc *paging_desc_new(paging_map_level_t level)
 bool paging_is_aligned(void *addr)
 {
 	return ((uintptr_t)addr % PAGING_PAGE_SIZE) == 0;
-}
-
-static bool paging_null_entry(struct paging_desc_entry *entry)
-{
-	struct paging_desc_entry null_entry = {0};
-	return memcmp(entry, &null_entry, sizeof(struct paging_desc_entry)) == 0;
 }
 
 int paging_map(struct paging_desc *desc, void *virt, void *phys, int flags)

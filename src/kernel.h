@@ -11,6 +11,7 @@ void terminal_writechar(char c, char color);
 void panic(const char *msg);
 void kernel_page();
 void kernel_registers();
+struct paging_desc *kernel_desc();
 
 #define ERROR(value) (void *)value
 #define ERROR_I(value) (int)value
