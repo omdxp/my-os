@@ -13,6 +13,6 @@ void kernel_page();
 void kernel_registers();
 struct paging_desc *kernel_desc();
 
-#define ERROR(value) (void *)value
-#define ERROR_I(value) (int)value
+#define ERROR(value) (void *)((intptr_t)(value))
+#define ERROR_I(value) (int)((intptr_t)(value))
 #define ISERR(value) ((int)value < 0)

@@ -145,8 +145,13 @@ int process_free_bin_data(struct process *process)
 
 int process_free_elf_data(struct process *process)
 {
-	elf_close(process->elf_file);
-	return 0;
+	// temporarily disable ELF loading
+	return -EINFORMAT;
+	// if (process->elf_file)
+	// {
+	// 	elf_close(process->elf_file);
+	// }
+	// return 0;
 }
 
 int process_free_program_data(struct process *process)
@@ -306,49 +311,51 @@ void process_free(struct process *process, void *ptr)
 
 static int process_load_binary(const char *filename, struct process *process)
 {
-	int res = 0;
-	void *program_data_ptr = 0;
-	int fd = fopen(filename, "r");
-	if (!fd)
-	{
-		res = -EIO;
-		goto out;
-	}
+	// temporarily disable binary loading
+	return -EINFORMAT;
+	// 	int res = 0;
+	// 	void *program_data_ptr = 0;
+	// 	int fd = fopen(filename, "r");
+	// 	if (!fd)
+	// 	{
+	// 		res = -EIO;
+	// 		goto out;
+	// 	}
 
-	struct file_stat stat;
-	res = fstat(fd, &stat);
-	if (res != MYOS_ALL_OK)
-	{
-		goto out;
-	}
+	// 	struct file_stat stat;
+	// 	res = fstat(fd, &stat);
+	// 	if (res != MYOS_ALL_OK)
+	// 	{
+	// 		goto out;
+	// 	}
 
-	program_data_ptr = kzalloc(stat.filesize);
-	if (!program_data_ptr)
-	{
-		res = -ENOMEM;
-		goto out;
-	}
+	// 	program_data_ptr = kzalloc(stat.filesize);
+	// 	if (!program_data_ptr)
+	// 	{
+	// 		res = -ENOMEM;
+	// 		goto out;
+	// 	}
 
-	if (fread(program_data_ptr, stat.filesize, 1, fd) != 1)
-	{
-		res = -EIO;
-		goto out;
-	}
+	// 	if (fread(program_data_ptr, stat.filesize, 1, fd) != 1)
+	// 	{
+	// 		res = -EIO;
+	// 		goto out;
+	// 	}
 
-	process->filetype = PROCESS_FILETYPE_BIN;
-	process->ptr = program_data_ptr;
-	process->size = stat.filesize;
+	// 	process->filetype = PROCESS_FILETYPE_BIN;
+	// 	process->ptr = program_data_ptr;
+	// 	process->size = stat.filesize;
 
-out:
-	if (res < 0)
-	{
-		if (program_data_ptr)
-		{
-			kfree(program_data_ptr);
-		}
-	}
-	fclose(fd);
-	return res;
+	// out:
+	// 	if (res < 0)
+	// 	{
+	// 		if (program_data_ptr)
+	// 		{
+	// 			kfree(program_data_ptr);
+	// 		}
+	// 	}
+	// 	fclose(fd);
+	// 	return res;
 }
 
 static int process_load_elf(const char *filename, struct process *process)
