@@ -3,6 +3,7 @@
 #include "memory/memory.h"
 #include "memory/heap/heap.h"
 #include "status.h"
+#include "kernel.h"
 
 static struct paging_desc *current_paging_desc = NULL;
 
@@ -15,6 +16,62 @@ struct paging_pml_entries *paging_pml4_entries_new()
 	}
 
 	return pml4;
+}
+
+void paging_desc_entry_free(struct paging_desc_entry *table_entry, paging_map_level_t level)
+{
+	if (paging_null_entry(table_entry))
+	{
+		return;
+	}
+
+	if (level == 0)
+	{
+		panic("paging_desc_entry_free: Cannot free level 0 entry directly\n");
+	}
+
+	if (level > PAGING_MAP_LEVEL_4)
+	{
+		panic("paging_desc_entry_free: Invalid paging level\n");
+	}
+
+	if (level > 1)
+	{
+		for (size_t i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE; i++)
+		{
+			struct paging_desc_entry *entry = &table_entry[i];
+			if (!paging_null_entry(entry))
+			{
+				struct paging_desc_entry *child_entry = (struct paging_desc_entry *)((uintptr_t)((entry->address) << 12));
+				if (child_entry)
+				{
+					paging_desc_entry_free(child_entry, level - 1);
+				}
+			}
+		}
+	}
+
+	kfree(table_entry);
+}
+
+void paging_desc_free(struct paging_desc *desc)
+{
+	paging_map_level_t level = desc->level;
+	for (size_t i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE; i++)
+	{
+		struct paging_desc_entry *entry = &desc->pml->entries[i];
+		if (!paging_null_entry(entry))
+		{
+			struct paging_desc_entry *child_entry = (struct paging_desc_entry *)((uintptr_t)((entry->address) << 12));
+			if (child_entry)
+			{
+				paging_desc_entry_free(child_entry, level - 1);
+			}
+		}
+	}
+
+	kfree(desc->pml);
+	kfree(desc);
 }
 
 static bool paging_map_level_is_valid(paging_map_level_t level)
