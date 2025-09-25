@@ -118,6 +118,22 @@ gdt:
 	db 00000000b        ; granularity
 	db 0x00             ; base high
 
+	; 64-bit user code segment
+	dw 0x0000           ; limit low
+	dw 0x0000           ; base low
+	db 0x00             ; base middle
+	db 11111010b        ; access (DPL=3)
+	db 00100000b        ; granularity (L bit set)
+	db 0x00             ; base high
+
+	; 64-bit user data segment
+	dw 0x0000           ; limit low
+	dw 0x0000           ; base low
+	db 0x00             ; base middle
+	db 11110010b        ; access (DPL=3)
+	db 00000000b        ; granularity
+	db 0x00             ; base high
+
 gdt_end:
 
 gdt_descriptor:
