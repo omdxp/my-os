@@ -1,4 +1,4 @@
-[BITS 32]
+[BITS 64]
 
 section .asm
 
@@ -7,51 +7,30 @@ global task_return
 global user_registers
 
 task_return:
-	mov ebp, esp
-	; access structure passed here
-	mov ebx, [ebp+4]
-	; push data/stack selector
-	push dword [ebx+44]
-	; push stack pointer
-	push dword [ebx+40]
-	; push flags
-	pushf
-	pop eax
-	or eax, 0x200
-	push eax
-	; push code segment
-	push dword [ebx+32]
-	; push ip to execute
-	push dword [ebx+28]
-	; setup some segment registers
-	mov ax, [ebx+44]
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
+	push qword [rdi+88] ; ss
+	push qword [rdi+80] ; rsp
+	mov rax, [rdi+72]   ; rflags
+	or rax, 0x200       ; set interrupt flag
+	push rax
 
-	push dword [ebp+4]
+	push qword 0x2b     ; user code segment
+	push qword [rdi+56] ; rip
 	call restore_general_purpose_registers
-	add esp, 4
-	; leave kernel land and execute user land
-	iretd
+
+	iretq               ; return to user land
 
 restore_general_purpose_registers:
-	push ebp
-	mov ebp, esp
-	mov ebx, [ebp+8]
-	mov edi, [ebx]
-	mov esi, [ebx+4]
-	mov ebp, [ebx+8]
-	mov edx, [ebx+16]
-	mov ecx, [ebx+20]
-	mov eax, [ebx+24]
-	mov ebx, [ebx+12]
-	add esp, 4
+	mov rsi, [rdi+8] ; rax
+	mov rbp, [rdi+16] ; rbx
+	mov rbx, [rdi+24] ; rcx
+	mov rdx, [rdi+32] ; rdx
+	mov rcx, [rdi+40] ; rsi
+	mov rax, [rdi+48] ; rdi
+	mov rdi, [rdi]    ; rdi
 	ret
 
 user_registers:
-	mov ax, 0x23
+	mov ax, 0x2b ; user data segment | privilege level 3
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
