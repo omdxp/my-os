@@ -129,6 +129,23 @@ gdt:
 	db 00000000b        ; granularity
 	db 0x00             ; base high
 
+	; TSS segment (will be filled in later)
+	; set to zero as it will be initialized in kernel code
+	dw 0x0000           ; limit low
+	dw 0x0000           ; base low
+	db 0x00             ; base middle
+	db 0x00 		    ; access
+	db 0x00             ; granularity
+	db 0x00             ; base high
+	
+	; TSS base address (high 32 bits)
+	dw 0x0000           ; limit low
+	dw 0x0000           ; base low
+	db 0x00             ; base middle
+	db 0x00 		    ; access
+	db 0x00             ; granularity
+	db 0x00             ; base high
+
 gdt_end:
 
 gdt_descriptor:
