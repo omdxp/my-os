@@ -14,8 +14,8 @@
 // #include "fs/pparser.h"
 #include "string/string.h"
 // #include "disk/streamer.h"
-// #include "gdt/gdt.h"
-// #include "task/tss.h"
+#include "gdt/gdt.h"
+#include "task/tss.h"
 #include "config.h"
 #include "status.h"
 // #include "isr80h/isr80h.h"
@@ -126,6 +126,9 @@ void panic(const char *msg)
 // 	{.base = (uint32_t)&tss, .limit = sizeof(tss), .type = 0xe9}, // TSS segment
 // };
 
+struct tss tss;
+extern struct gdt_entry gdt[];
+
 // page descriptor for 64-bit paging
 struct paging_desc *kernel_paging_desc = 0;
 
@@ -134,8 +137,6 @@ void kernel_page()
 	kernel_registers();
 	paging_switch(kernel_paging_desc);
 }
-
-void div_test();
 
 struct paging_desc *kernel_desc()
 {
@@ -183,10 +184,23 @@ void kernel_main()
 	kheap_post_paging();
 
 	idt_init(); // initialize the interrupt descriptor table
-	print("IDT initialized!\n");
 
-	div_test();
-	print("Div test completed!\n"); // should not be printed
+	// allocate a 1MB stack for the kernel IDT
+	size_t stack_size = 1024 * 1024;
+	void *megabyte_stack_tss_end = kzalloc(stack_size);
+	void *megabyte_stack_tss_start = (void *)(((uintptr_t)megabyte_stack_tss_end) + stack_size);
+
+	// block first page to catch stack overflows
+	paging_map(kernel_desc(), megabyte_stack_tss_end, megabyte_stack_tss_end, 0);
+
+	// setup tss
+	memset(&tss, 0x00, sizeof(tss));
+	tss.rsp0 = (uint64_t)megabyte_stack_tss_start;
+	tss.iopb_offset = sizeof(tss); // no I/O bitmap
+
+	struct tss_desc_64 *tss_desc = (struct tss_desc_64 *)&gdt[KERNEL_LONG_MODE_TSS_GDT_INDEX];
+	gdt_set_tss(tss_desc, &tss, sizeof(tss) - 1, TSS_DESCRIPTOR_TYPE, 0);
+	print("TSS set in GDT\n");
 
 	// ptr[0] = 'P';
 	// ptr[1] = 'a';

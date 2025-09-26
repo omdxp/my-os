@@ -2,7 +2,7 @@
 
 global _start
 global kernel_registers
-global div_test
+global gdt
 extern kernel_main
 
 ; segment selectors
@@ -75,11 +75,6 @@ long_mode_entry:
 	; call kernel main function
 	jmp kernel_main
 	jmp $
-
-div_test:
-	mov rax, 0
-	idiv rax
-	ret
 
 ; global descriptor table (GDT)
 gdt:
