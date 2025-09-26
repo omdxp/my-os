@@ -5,6 +5,8 @@
 
 #define KERNEL_LONG_MODE_CODE_SELECTOR 0x18
 
+#define TSS_DESCRIPTOR_TYPE 0x89 // Present, Ring 0, Type 9 (Available 64-bit TSS)
+
 #define MYOS_TOTAL_INTERRUPTS 512
 
 #define MYOS_MEMORY_MAP_LOCATION 0x7e00				  // 0x7e00 - 0x7dff (1 byte for total entries)
