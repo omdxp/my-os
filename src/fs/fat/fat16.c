@@ -397,39 +397,23 @@ out:
 }
 
 // gets correct cluster to use based on starting cluster and offset
-static int fat16_get_cluster_for_offset(struct disk *disk, int starting_cluster, int offset)
+int fat16_get_cluster_for_offset(struct disk *disk, uint16_t starting_cluster, int offset)
 {
 	int res = 0;
 	struct fat_private *private = disk->fs_private;
 	int size_of_cluster_bytes = private->header.primary_header.sectors_per_cluster * disk->sector_size;
-	int cluster_to_use = starting_cluster;
+	uint16_t cluster_to_use = starting_cluster;
 	int clusters_ahead = offset / size_of_cluster_bytes;
 	for (int i = 0; i < clusters_ahead; i++)
 	{
-		int entry = fat16_get_fat_entry(disk, cluster_to_use);
-		if (entry == 0xff8 || entry == 0xfff)
+		uint16_t entry = fat16_get_fat_entry(disk, cluster_to_use);
+		if (entry >= 0xfff8)
 		{
-			// last entry in file
-			res = -EIO;
+			res = -EOUTOFRANGE;
 			goto out;
 		}
 
-		// check if sector is marked as bad
-		if (entry == MYOS_FAT16_BAD_SECTOR)
-		{
-			res = -EIO;
-			goto out;
-		}
-
-		// check if sectors are reserved
-		if (entry == 0xff0 || entry == 0xff6)
-		{
-			res = -EIO;
-			goto out;
-		}
-
-		// check if file allocation table is corrupted
-		if (entry == 0x00)
+		if (entry == MYOS_FAT16_BAD_SECTOR || (entry >= 0xfff0 && entry <= 0xfff6) || entry == 0x0000)
 		{
 			res = -EIO;
 			goto out;
@@ -443,43 +427,57 @@ out:
 	return res;
 }
 
-static int fat16_read_internal_from_stream(struct disk *disk, struct disk_stream *stream, int cluster, int offset, int total, void *out)
+static int fat16_read_internal_from_stream(struct disk *disk, struct disk_stream *stream, uint16_t cluster, int offset, int total, void *out)
 {
-	int res = 0;
+	int res = MYOS_ALL_OK;
 	struct fat_private *private = disk->fs_private;
 	int size_of_cluster_bytes = private->header.primary_header.sectors_per_cluster * disk->sector_size;
-	int cluster_to_use = fat16_get_cluster_for_offset(disk, cluster, offset);
-	if (cluster_to_use < 0)
+	uint16_t cluster_to_use = cluster;
+	int bytes_read = 0;
+	int starting_offset = offset;
+
+	while (total > 0)
 	{
-		res = cluster_to_use;
-		goto out;
+		res = fat16_get_cluster_for_offset(disk, cluster_to_use, starting_offset);
+		if (res < 0)
+		{
+			break;
+		}
+
+		cluster_to_use = (uint16_t)res;
+		int offset_from_cluster = starting_offset % size_of_cluster_bytes;
+		int starting_sector = fat16_cluster_to_sector(private, cluster_to_use);
+		int starting_pos = (starting_sector * disk->sector_size) + offset_from_cluster;
+		int total_to_read = size_of_cluster_bytes - offset_from_cluster;
+		if (total_to_read > total)
+		{
+			total_to_read = total;
+		}
+
+		res = diskstreamer_seek(stream, starting_pos);
+		if (res != MYOS_ALL_OK)
+		{
+			break;
+		}
+
+		res = diskstreamer_read(stream, out + bytes_read, total_to_read);
+		if (res != MYOS_ALL_OK)
+		{
+			break;
+		}
+
+		out += total_to_read;
+		bytes_read += total_to_read;
+		starting_offset += total_to_read;
+		total -= total_to_read;
 	}
 
-	int offset_from_cluster = offset % size_of_cluster_bytes;
-	int starting_sector = fat16_cluster_to_sector(private, cluster_to_use);
-	int starting_pos = (starting_sector * disk->sector_size) + offset_from_cluster;
-	int total_to_read = total > size_of_cluster_bytes ? size_of_cluster_bytes : total;
-	res = diskstreamer_seek(stream, starting_pos);
-	if (res != MYOS_ALL_OK)
+	if (res < 0)
 	{
-		goto out;
+		return res;
 	}
 
-	res = diskstreamer_read(stream, out, total_to_read);
-	if (res != MYOS_ALL_OK)
-	{
-		goto out;
-	}
-
-	total -= total_to_read;
-	if (total > 0)
-	{
-		// still have more to read
-		res = fat16_read_internal_from_stream(disk, stream, cluster, offset + total_to_read, total, out + total_to_read);
-	}
-
-out:
-	return res;
+	return bytes_read;
 }
 
 static int fat16_read_internal(struct disk *disk, int starting_cluster, int offset, int total, void *out)

@@ -1,5 +1,6 @@
 #include "streamer.h"
 #include "memory/heap/kheap.h"
+#include "memory/memory.h"
 #include "config.h"
 #include <stdbool.h>
 
@@ -25,37 +26,38 @@ int diskstreamer_seek(struct disk_stream *stream, int pos)
 
 int diskstreamer_read(struct disk_stream *stream, void *out, int total)
 {
-	int sector = stream->pos / MYOS_SECTOR_SIZE;
-	int offset = stream->pos % MYOS_SECTOR_SIZE;
-	int total_to_read = total;
-	bool overflow = (offset + total_to_read) >= MYOS_SECTOR_SIZE;
-	char buf[MYOS_SECTOR_SIZE];
-
-	if (overflow)
+	if (total <= 0)
 	{
-		total_to_read -= (offset + total_to_read) - MYOS_SECTOR_SIZE;
+		return -1;
 	}
 
-	int res = disk_read_block(stream->disk, sector, 1, buf);
-	if (res < 0)
+	char *outc = out;
+	int remaining = total;
+
+	while (remaining > 0)
 	{
-		goto out;
+		int sector = stream->pos / MYOS_SECTOR_SIZE;
+		int offset = stream->pos % MYOS_SECTOR_SIZE;
+		int chunk = MYOS_SECTOR_SIZE - offset;
+		if (chunk > remaining)
+		{
+			chunk = remaining;
+		}
+
+		char buf[MYOS_SECTOR_SIZE];
+		int res = disk_read_block(stream->disk, sector, 1, buf);
+		if (res < 0)
+		{
+			return res;
+		}
+
+		memcpy(outc, buf + offset, chunk);
+		outc += chunk;
+		stream->pos += chunk;
+		remaining -= chunk;
 	}
 
-	for (int i = 0; i < total_to_read; i++)
-	{
-		*(char *)out++ = buf[offset + i];
-	}
-
-	// adjust stream
-	stream->pos += total_to_read;
-	if (overflow)
-	{
-		res = diskstreamer_read(stream, out, total - total_to_read);
-	}
-
-out:
-	return res;
+	return 0;
 }
 
 void diskstreamer_close(struct disk_stream *stream)
