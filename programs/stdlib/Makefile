@@ -4,13 +4,13 @@ INCLUDES=-I./src
 FLAGS=-g -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
 all: $(FILES)
-	$(TARGET)-ld -m elf_i386 -relocatable $(FILES) -o ./stdlib.elf
+	$(TARGET)-ld -m elf_x86_64 -relocatable $(FILES) -o ./stdlib.elf
 
 ./build/start.asm.o: ./src/start.asm
-	nasm -f elf ./src/start.asm -o ./build/start.asm.o
+	nasm -f elf64 ./src/start.asm -o ./build/start.asm.o
 
 ./build/myos.asm.o: ./src/myos.asm
-	nasm -f elf ./src/myos.asm -o ./build/myos.asm.o
+	nasm -f elf64 ./src/myos.asm -o ./build/myos.asm.o
 
 ./build/myos.o: ./src/myos.c
 	$(TARGET)-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/myos.c -o ./build/myos.o

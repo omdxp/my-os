@@ -13,9 +13,9 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 	sudo mount -t vfat ./bin/os.bin /mnt/d
 	# copy a file over
 	sudo cp ./hello.txt /mnt/d
-# 	sudo cp ./programs/blank/blank.elf /mnt/d
-# 	sudo cp ./programs/echo/echo.elf /mnt/d
-# 	sudo cp ./programs/shell/shell.elf /mnt/d
+	sudo cp ./programs/blank/blank.elf /mnt/d
+	sudo cp ./programs/echo/echo.elf /mnt/d
+	sudo cp ./programs/shell/shell.elf /mnt/d
 	sudo cp ./programs/simple/build/simple.bin /mnt/d
 	sudo umount /mnt/d
 
@@ -124,10 +124,10 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 
 user_programs:
 	cd ./programs/simple && $(MAKE) all
-# 	cd ./programs/stdlib && $(MAKE) all
-# 	cd ./programs/blank && $(MAKE) all
-# 	cd ./programs/echo && $(MAKE) all
-# 	cd ./programs/shell && $(MAKE) all
+	cd ./programs/stdlib && $(MAKE) all
+	cd ./programs/blank && $(MAKE) all
+	cd ./programs/echo && $(MAKE) all
+	cd ./programs/shell && $(MAKE) all
 
 clean:
 	find . -name '*.o' -delete
