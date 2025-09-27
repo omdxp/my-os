@@ -7,8 +7,8 @@
 #include "memory/heap/heap.h"
 #include "memory/memory.h"
 #include "memory/paging/paging.h"
-// #include "task/task.h"
-// #include "task/process.h"
+#include "task/task.h"
+#include "task/process.h"
 // #include "disk/disk.h"
 // #include "fs/file.h"
 // #include "fs/pparser.h"
@@ -18,8 +18,8 @@
 #include "task/tss.h"
 #include "config.h"
 #include "status.h"
-// #include "isr80h/isr80h.h"
-// #include "keyboard/keyboard.h"
+#include "isr80h/isr80h.h"
+#include "keyboard/keyboard.h"
 
 uint16_t *video_mem = 0;
 uint16_t terminal_row = 0;
@@ -200,7 +200,14 @@ void kernel_main()
 
 	struct tss_desc_64 *tss_desc = (struct tss_desc_64 *)&gdt[KERNEL_LONG_MODE_TSS_GDT_INDEX];
 	gdt_set_tss(tss_desc, &tss, sizeof(tss) - 1, TSS_DESCRIPTOR_TYPE, 0);
-	print("TSS set in GDT\n");
+
+	// load tss
+	tss_load(KERNEL_LONG_MODE_TSS_SELECTOR);
+	print("TSS loaded\n");
+
+	// register kernel commands
+	isr80h_register_commands();
+	print("isr80h commands registered\n");
 
 	// ptr[0] = 'P';
 	// ptr[1] = 'a';
