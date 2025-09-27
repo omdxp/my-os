@@ -75,6 +75,9 @@ int task_init(struct task *task, struct process *process)
 		return -ENOMEM;
 	}
 
+	// map all memory regions from e820 to this page directory
+	paging_map_e820_memory_regions(task->paging_desc);
+
 	task->registers.ip = MYOS_PROGRAM_VIRTUAL_ADDRESS;
 	if (process->filetype == PROCESS_FILETYPE_ELF)
 	{

@@ -216,6 +216,22 @@ void kernel_main()
 	isr80h_register_commands();
 	print("isr80h commands registered\n");
 
+	// initialize keyboard
+	keyboard_init();
+	print("Keyboard initialized\n");
+
+	// load program
+	struct process *process = 0;
+	int res = process_load_switch("0:/simple.bin", &process);
+	if (res != MYOS_ALL_OK)
+	{
+		panic("Failed to load simple.bin\n");
+	}
+	print("simple.bin loaded\n");
+
+	// drop to user land
+	task_run_first_ever_task();
+
 	// ptr[0] = 'P';
 	// ptr[1] = 'a';
 	// ptr[2] = 'g';
