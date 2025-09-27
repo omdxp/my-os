@@ -225,6 +225,9 @@ void kernel_main()
 	int res = process_load_switch("0:/blank.elf", &process);
 	if (res != MYOS_ALL_OK)
 	{
+		print("Error code: ");
+		print(itoa(-res));
+		print("\n");
 		panic("Failed to load blank.elf\n");
 	}
 	print("blank.elf loaded\n");

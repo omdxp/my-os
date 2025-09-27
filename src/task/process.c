@@ -145,13 +145,12 @@ int process_free_bin_data(struct process *process)
 
 int process_free_elf_data(struct process *process)
 {
-	// temporarily disable ELF loading
-	return -EINFORMAT;
-	// if (process->elf_file)
-	// {
-	// 	elf_close(process->elf_file);
-	// }
-	// return 0;
+	if (process->elf_file)
+	{
+		elf_close(process->elf_file);
+	}
+
+	return 0;
 }
 
 int process_free_program_data(struct process *process)
@@ -396,10 +395,10 @@ int process_map_elf(struct process *process)
 	int res = 0;
 	struct elf_file *elf_file = process->elf_file;
 	struct elf_header *header = elf_header(elf_file);
-	struct elf32_phdr *phdrs = elf_pheader(header);
+	struct elf64_phdr *phdrs = elf_pheader(header);
 	for (int i = 0; i < header->e_phnum; i++)
 	{
-		struct elf32_phdr *phdr = &phdrs[i];
+		struct elf64_phdr *phdr = &phdrs[i];
 		void *phdr_phys_address = elf_phdr_phys_address(elf_file, phdr);
 		int flags = PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL;
 		if (phdr->p_flags & PF_W)

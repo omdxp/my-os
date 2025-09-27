@@ -81,8 +81,7 @@ int task_init(struct task *task, struct process *process)
 	task->registers.ip = MYOS_PROGRAM_VIRTUAL_ADDRESS;
 	if (process->filetype == PROCESS_FILETYPE_ELF)
 	{
-		panic("ELF entry point not implemented yet\n");
-		// task->registers.ip = elf_header(process->elf_file)->e_entry;
+		task->registers.ip = elf_header(process->elf_file)->e_entry;
 	}
 
 	task->registers.ss = USER_DATA_SEGMENT;

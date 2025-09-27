@@ -19,8 +19,8 @@ static bool elf_valid_signature(void *buffer)
 
 static bool elf_valid_class(struct elf_header *header)
 {
-	// we only support 32 bit binaries
-	return header->e_ident[EI_CLASS] == ELFCLASSNONE || header->e_ident[EI_CLASS] == ELFCLASS32;
+	// we only support 64 bit binaries
+	return header->e_ident[EI_CLASS] == ELFCLASSNONE || header->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
 static bool elf_valid_encoding(struct elf_header *header)
@@ -48,32 +48,32 @@ struct elf_header *elf_header(struct elf_file *file)
 	return file->elf_memory;
 }
 
-struct elf32_shdr *elf_sheader(struct elf_header *header)
+struct elf64_shdr *elf_sheader(struct elf_header *header)
 {
-	return (struct elf32_shdr *)((uintptr_t)header + header->e_shoff);
+	return (struct elf64_shdr *)((elf64_off)header + header->e_shoff);
 }
 
-struct elf32_phdr *elf_pheader(struct elf_header *header)
+struct elf64_phdr *elf_pheader(struct elf_header *header)
 {
 	if (header->e_phoff == 0)
 	{
 		return 0;
 	}
 
-	return (struct elf32_phdr *)((uintptr_t)header + header->e_phoff);
+	return (struct elf64_phdr *)((elf64_off)header + header->e_phoff);
 }
 
-struct elf32_phdr *elf_program_header(struct elf_header *header, int index)
+struct elf64_phdr *elf_program_header(struct elf_header *header, int index)
 {
 	return &elf_pheader(header)[index];
 }
 
-struct elf32_shdr *elf_section(struct elf_header *header, int index)
+struct elf64_shdr *elf_section(struct elf_header *header, int index)
 {
 	return &elf_sheader(header)[index];
 }
 
-void *elf_phdr_phys_address(struct elf_file *file, struct elf32_phdr *phdr)
+void *elf_phdr_phys_address(struct elf_file *file, struct elf64_phdr *phdr)
 {
 	return elf_memory(file) + phdr->p_offset;
 }
@@ -108,25 +108,32 @@ int elf_validate_loaded(struct elf_header *header)
 	return (elf_valid_signature(header) && elf_valid_class(header) && elf_valid_encoding(header) && elf_has_program_header(header)) ? MYOS_ALL_OK : -EINFORMAT;
 }
 
-int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf32_phdr *phdr)
+int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf64_phdr *phdr)
 {
-	if (elf_file->virtual_base_address >= (void *)(uintptr_t)phdr->p_vaddr || elf_file->virtual_base_address == 0x00)
+	if (elf_file->virtual_base_address >= (void *)phdr->p_vaddr || elf_file->virtual_base_address == 0x00)
 	{
-		elf_file->virtual_base_address = (void *)(uintptr_t)phdr->p_vaddr;
+		elf_file->virtual_base_address = (void *)phdr->p_vaddr;
 		elf_file->physical_base_address = elf_memory(elf_file) + phdr->p_offset;
 	}
 
 	unsigned int end_virtual_address = phdr->p_vaddr + phdr->p_filesz;
-	if (elf_file->virtual_end_address <= (void *)(uintptr_t)end_virtual_address || elf_file->virtual_end_address == 0x00)
+	if (elf_file->virtual_end_address <= (void *)(elf64_addr)end_virtual_address || elf_file->virtual_end_address == 0x00)
 	{
-		elf_file->virtual_end_address = (void *)(uintptr_t)end_virtual_address;
+		elf_file->virtual_end_address = (void *)(elf64_addr)end_virtual_address;
 		elf_file->physical_end_address = elf_memory(elf_file) + phdr->p_offset + phdr->p_filesz;
+	}
+
+	size_t filesize = phdr->p_filesz;
+	size_t total_size = phdr->p_memsz;
+	if (total_size > filesize)
+	{
+		memset((char *)elf_file->physical_base_address + filesize, 0, total_size - filesize);
 	}
 
 	return 0;
 }
 
-int elf_process_pheader(struct elf_file *elf_file, struct elf32_phdr *phdr)
+int elf_process_pheader(struct elf_file *elf_file, struct elf64_phdr *phdr)
 {
 	int res = 0;
 	switch (phdr->p_type)
@@ -144,7 +151,7 @@ int elf_process_pheaders(struct elf_file *elf_file)
 	struct elf_header *header = elf_header(elf_file);
 	for (int i = 0; i < header->e_phnum; i++)
 	{
-		struct elf32_phdr *phdr = elf_program_header(header, i);
+		struct elf64_phdr *phdr = elf_program_header(header, i);
 		res = elf_process_pheader(elf_file, phdr);
 		if (res < 0)
 		{
