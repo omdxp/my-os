@@ -2,18 +2,18 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "idt/idt.h"
-// #include "io/io.h"
+#include "io/io.h"
 #include "memory/heap/kheap.h"
 #include "memory/heap/heap.h"
 #include "memory/memory.h"
 #include "memory/paging/paging.h"
 #include "task/task.h"
 #include "task/process.h"
-// #include "disk/disk.h"
-// #include "fs/file.h"
-// #include "fs/pparser.h"
+#include "disk/disk.h"
+#include "fs/file.h"
+#include "fs/pparser.h"
 #include "string/string.h"
-// #include "disk/streamer.h"
+#include "disk/streamer.h"
 #include "gdt/gdt.h"
 #include "task/tss.h"
 #include "config.h"
@@ -183,7 +183,14 @@ void kernel_main()
 
 	kheap_post_paging();
 
-	idt_init(); // initialize the interrupt descriptor table
+	// initialize the interrupt descriptor table
+	idt_init();
+
+	// initialize file systems
+	fs_init();
+
+	// initialize disks
+	disk_search_and_init();
 
 	// allocate a 1MB stack for the kernel IDT
 	size_t stack_size = 1024 * 1024;
