@@ -72,6 +72,44 @@ long_mode_entry:
 	mov rbp, 0x00200000
 	mov rsp, rbp
 
+	; remap the PIC
+	mov al, 0x11 ; start initialization in cascade mode
+	out 0x20, al ; send ICW1 to master PIC
+	
+	mov al, 0x20 ; remap master PIC to interrupt vector 0x20
+	out 0x21, al ; send ICW2 to master PIC
+
+	mov al, 0x04 ; tell slave PIC its cascade identity
+	out 0x21, al ; send ICW3 to master PIC
+
+	mov al, 0x01 ; 8086 mode
+	out 0x21, al ; send ICW4 to master PIC
+
+	; remapping slave PIC
+	mov al, 0x11 ; start initialization in cascade mode
+	out 0xA0, al ; send ICW1 to slave PIC
+
+	mov al, 0x28 ; remap slave PIC to interrupt vector 0x28
+	out 0xA1, al ; send ICW2 to slave PIC
+
+	mov al, 0x02 ; tell slave PIC its cascade identity
+	out 0xA1, al ; send ICW3 to slave PIC
+
+	mov al, 0x01 ; 8086 mode
+	out 0xA1, al ; send ICW4 to slave PIC
+
+	; unmask only necessary IRQs
+	mov al, 0xFB ; 11111011 - unmask IRQ0 (timer) and IRQ1 (keyboard)
+	out 0x21, al ; mask for master PIC
+
+	; mask all IRQs on slave PIC
+	mov al, 0xFF ; 11111111 - mask all IRQs
+	out 0xA1, al ; mask for slave PIC
+
+	mov al, 0x20 ; send End of Interrupt (EOI) to master PIC
+	out 0x20, al ; send EOI to master PIC
+	out 0xA0, al ; send EOI to slave PIC
+
 	; call kernel main function
 	jmp kernel_main
 	jmp $
