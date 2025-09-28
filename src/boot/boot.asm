@@ -45,7 +45,7 @@ step2:
 
 	; enable the A20 line
 	in al, 0x92
-	or al, 00000010b
+	or al, 2
 	out 0x92, al
 
 	; setup stack
@@ -134,7 +134,7 @@ load32:
 
 	; enable A20 line
 	in al, 0x92
-	or al, 00000010b
+	or al, 2
 	out 0x92, al
 
 	mov eax, 1

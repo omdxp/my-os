@@ -230,96 +230,11 @@ void kernel_main()
 		print("\n");
 		panic("Failed to load blank.elf\n");
 	}
-	print("blank.elf loaded\n");
+	print("blank.elf loaded\n"); // TODO: check assembly
 
 	// drop to user land
 	task_run_first_ever_task();
 
-	// ptr[0] = 'P';
-	// ptr[1] = 'a';
-	// ptr[2] = 'g';
-	// ptr[3] = 'i';
-	// ptr[4] = 'n';
-	// ptr[5] = 'g';
-	// ptr[6] = ' ';
-	// ptr[7] = 'E';
-	// ptr[8] = 'n';
-	// ptr[9] = 'a';
-	// ptr[10] = 'b';
-	// ptr[11] = 'l';
-	// ptr[12] = 'e';
-	// ptr[13] = 'd';
-	// ptr[14] = '!';
-	// ptr[15] = '\n';
-	// ptr[16] = '\0';
-	// print(ptr);
-	// kfree(ptr);
-
-	// struct heap *kheap = kheap_get();
-	// size_t heap_size = heap_total_size(kheap);
-	// size_t heap_used = heap_total_used(kheap);
-	// size_t heap_avail = heap_total_available(kheap);
-	// print("Heap total size: ");
-	// print(itoa((int)heap_size));
-	// print(" bytes\n");
-	// print("Heap used: ");
-	// print(itoa((int)heap_used));
-	// print(" bytes\n");
-	// print("Heap available: ");
-	// print(itoa((int)heap_avail));
-	// print(" bytes\n");
-
-	// memset(gdt_real, 0x00, sizeof(gdt_real));
-	// gdt_structured_to_gdt(gdt_real, gdt_structured, MYOS_TOTAL_GDT_SEGMENTS);
-
-	// // load gdt
-	// gdt_load(gdt_real, sizeof(gdt_real));
-
-	// // initialize the heap
-	// kheap_init();
-
-	// // initialize filesystems
-	// fs_init();
-
-	// // search and initialize disks
-	// disk_search_and_init();
-
-	// // initialize the interrupt descriptor table
-	// idt_init();
-
-	// // setup tss
-	// memset(&tss, 0x00, sizeof(tss));
-	// tss.esp0 = 0x600000;
-	// tss.ss0 = KERNEL_DATA_SELECTOR;
-
-	// // load tss
-	// tss_load(0x28);
-
-	// // setup paging
-	// kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
-
-	// // switch to kernel paging chunk
-	// paging_switch(kernel_chunk);
-
-	// // enable paging
-	// enable_paging();
-
-	// // register kernel commands
-	// isr80h_register_commands();
-
-	// // initialize all system keyboards
-	// keyboard_init();
-
-	// struct process *process = 0;
-	// int res = process_load_switch("0:/shell.elf", &process);
-	// if (res != MYOS_ALL_OK)
-	// {
-	// 	panic("Failed to load shell.elf\n");
-	// }
-
-	// task_run_first_ever_task();
-
 	while (1)
-	{
-	}
+		;
 }

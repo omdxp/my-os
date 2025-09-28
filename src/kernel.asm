@@ -38,13 +38,12 @@ _start:
 	; enable long mode in EFER MSR
 	mov ecx, 0xC0000080
 	rdmsr
-	or eax, 1 << 8
+	or eax, 0x100
 	wrmsr
 
 	; enable paging in CR0
 	mov eax, cr0
 	or eax, 1 << 31 ; set PG bit
-	or eax, 1 << 0  ; set PE bit
 	mov cr0, eax
 
 	; jump to 64-bit code segment
@@ -69,8 +68,8 @@ long_mode_entry:
 	mov ss, ax
 
 	; setup stack for 64-bit mode
-	mov rbp, 0x00200000
-	mov rsp, rbp
+	mov rsp, 0x00200000
+	mov rbp, rsp
 
 	; remap the PIC
 	mov al, 0x11 ; start initialization in cascade mode
@@ -115,56 +114,57 @@ long_mode_entry:
 	jmp $
 
 ; global descriptor table (GDT)
+align 8
 gdt:
 	; null segment
 	dq 0x0000000000000000
 
 	; 32-bit code segment
 	dw 0xFFFF           ; limit low
-	dw 0x0000           ; base low
-	db 0x00             ; base middle
-	db 10011010b        ; access
+	dw 0                ; base low
+	db 0                ; base middle
+	db 0x9a             ; access
 	db 11001111b        ; granularity
-	db 0x00             ; base high
+	db 0                ; base high
 
 	; 32-bit data segment
 	dw 0xFFFF           ; limit low
-	dw 0x0000           ; base low
-	db 0x00             ; base middle
-	db 10010010b        ; access
+	dw 0                ; base low
+	db 0                ; base middle
+	db 0x92             ; access
 	db 11001111b        ; granularity
-	db 0x00             ; base high
+	db 0                ; base high
 
 	; 64-bit code segment
 	dw 0x0000           ; limit low
 	dw 0x0000           ; base low
 	db 0x00             ; base middle
-	db 10011010b        ; access
-	db 00100000b        ; granularity (L bit set)
+	db 0x9a             ; access
+	db 0x20             ; granularity (L bit set)
 	db 0x00             ; base high
 
 	; 64-bit data segment
 	dw 0x0000           ; limit low
 	dw 0x0000           ; base low
 	db 0x00             ; base middle
-	db 10010010b        ; access
-	db 00000000b        ; granularity
+	db 0x92             ; access
+	db 0x00             ; granularity
 	db 0x00             ; base high
 
 	; 64-bit user code segment
 	dw 0x0000           ; limit low
 	dw 0x0000           ; base low
 	db 0x00             ; base middle
-	db 11111010b        ; access (DPL=3)
-	db 00100000b        ; granularity (L bit set)
+	db 0xfa             ; access (DPL=3)
+	db 0x20             ; granularity (L bit set)
 	db 0x00             ; base high
 
 	; 64-bit user data segment
 	dw 0x0000           ; limit low
 	dw 0x0000           ; base low
 	db 0x00             ; base middle
-	db 11110010b        ; access (DPL=3)
-	db 00000000b        ; granularity
+	db 0xf2             ; access (DPL=3)
+	db 0x00             ; granularity
 	db 0x00             ; base high
 
 	; TSS segment (will be filled in later)
@@ -204,7 +204,7 @@ PDPT_table:
 
 align 4096
 PD_table:
-	%assign addr 0x00000000 ; start of physical memory
+	%assign addr 0x0000000 ; start of physical memory
 	%rep 512
 		dq addr + 0x83
 		%assign addr addr + 0x200000 ; next 2 MB

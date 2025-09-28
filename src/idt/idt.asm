@@ -35,7 +35,7 @@ temp_rsp_storage: dq 0x00
 	pop rdx
 	pop rcx
 	pop rax
-	mov rsp, qword [temp_rsp_storage]
+	mov rsp, [temp_rsp_storage]
 %endmacro
 
 enable_interrupts:

@@ -105,7 +105,7 @@ void *elf_phys_end(struct elf_file *file)
 
 int elf_validate_loaded(struct elf_header *header)
 {
-	return (elf_valid_signature(header) && elf_valid_class(header) && elf_valid_encoding(header) && elf_has_program_header(header)) ? MYOS_ALL_OK : -EINFORMAT;
+	return (elf_valid_signature(header) && elf_valid_class(header) && elf_valid_encoding(header) && elf_has_program_header(header) && elf_is_executable(header)) ? MYOS_ALL_OK : -EINFORMAT;
 }
 
 int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf64_phdr *phdr)
@@ -116,10 +116,10 @@ int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf64_phdr *phdr)
 		elf_file->physical_base_address = elf_memory(elf_file) + phdr->p_offset;
 	}
 
-	unsigned int end_virtual_address = phdr->p_vaddr + phdr->p_filesz;
-	if (elf_file->virtual_end_address <= (void *)(elf64_addr)end_virtual_address || elf_file->virtual_end_address == 0x00)
+	uintptr_t end_virtual_address = phdr->p_vaddr + phdr->p_filesz;
+	if (elf_file->virtual_end_address <= (void *)end_virtual_address || elf_file->virtual_end_address == 0x00)
 	{
-		elf_file->virtual_end_address = (void *)(elf64_addr)end_virtual_address;
+		elf_file->virtual_end_address = (void *)end_virtual_address;
 		elf_file->physical_end_address = elf_memory(elf_file) + phdr->p_offset + phdr->p_filesz;
 	}
 
@@ -182,9 +182,24 @@ out:
 	return res;
 }
 
+void elf_file_free(struct elf_file *elf_file)
+{
+	if (elf_file->elf_memory)
+	{
+		kfree(elf_file->elf_memory);
+	}
+
+	kfree(elf_file);
+}
+
+struct elf_file *elf_file_new()
+{
+	return (struct elf_file *)kzalloc(sizeof(struct elf_file));
+}
+
 int elf_load(const char *filename, struct elf_file **file_out)
 {
-	struct elf_file *elf_file = kzalloc(sizeof(struct elf_file));
+	struct elf_file *elf_file = elf_file_new();
 	int fd = 0;
 	int res = fopen(filename, "r");
 	if (res <= 0)
@@ -217,6 +232,11 @@ int elf_load(const char *filename, struct elf_file **file_out)
 	*file_out = elf_file;
 
 out:
+	if (res < 0)
+	{
+		elf_file_free(elf_file);
+	}
+
 	fclose(fd);
 	return res;
 }

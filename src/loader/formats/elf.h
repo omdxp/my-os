@@ -56,9 +56,9 @@ typedef uint64_t elf64_addr;
 typedef uint64_t elf64_off;
 typedef uint16_t elf64_half;
 typedef uint32_t elf64_word;
-typedef int32_t elf64_sword;
+typedef uint32_t elf64_sword;
 typedef uint64_t elf64_xword;
-typedef int64_t elf64_sxword;
+typedef uint64_t elf64_sxword;
 
 struct elf64_phdr
 {
