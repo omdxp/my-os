@@ -13,7 +13,7 @@ info() {
 # Workspace Setup
 CURRENT_DIR=$(pwd)
 WORKSPACE_ROOT=$CURRENT_DIR
-KERNEL_DIR=../ # change if necessary
+KERNEL_DIR=../kernel/ # change if necessary
 while [ ! -f "$WORKSPACE_ROOT/edksetup.sh" ] && [ "$WORKSPACE_ROOT" != "/" ]; do
 	WORKSPACE_ROOT=$(dirname "$WORKSPACE_ROOT")
 done

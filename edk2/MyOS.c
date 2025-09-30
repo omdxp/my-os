@@ -15,7 +15,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PrintLib.h>
 #include <Guid/FileInfo.h>
-#include "my-os/src/config.h"
+#include "kernel/src/config.h"
 #include <Library/BaseMemoryLib.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
