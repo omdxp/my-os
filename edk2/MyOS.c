@@ -1,10 +1,12 @@
 /** @file
-  This sample application bases on HelloWorld PCD setting
-  to print "UEFI Hello World!" to the UEFI Console.
+  MyOS UEFI bootloader main source file.
 
-  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  Loads kernel.bin from the current filesystem, copies it to 0x100000,
+  exits UEFI boot services, and jumps to the kernel.
+
+  Copyright (c) 2025, omdxp. All rights reserved.
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
-
 **/
 
 #include <Uefi.h>

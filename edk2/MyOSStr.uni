@@ -1,12 +1,9 @@
 // /** @file
-// Sample UEFI Application Reference EDKII Module.
+// MyOSStr Localized Strings and Content
 //
-// This is a sample shell application that will print "UEFI Hello World!" to the
-// UEFI Console based on PCD setting.
+// Provides localized help and information strings for the MyOS UEFI bootloader.
 //
-// It demos how to use EDKII PCD mechanism to make code more flexible.
-//
-// Copyright (c) 2016, Intel Corporation. All rights reserved.<BR>
+// Copyright (c) 2025, omdxp. All rights reserved.<BR>
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
@@ -16,7 +13,7 @@
 
 #langdef en-US "English"
 
-#string STR_HELLO_WORLD_HELP_INFORMATION        #language en-US ""
-".TH HelloWorld 0 "Displays a \"UEFI Hello World!\" string."\r\n"
+#string STR_MYOS_HELP_INFORMATION        #language en-US ""
+".TH MyOS 0 \"Loads and boots the MyOS kernel from UEFI.\"\r\n"
 ".SH NAME\r\n"
-"HelloWorld application.\r\n"
+"MyOS UEFI bootloader application.\r\n"

@@ -1,19 +1,17 @@
 // /** @file
-// Sample UEFI Application Reference EDKII Module.
+// MyOS UEFI bootloader EDKII Module.
 //
-// This is a sample shell application that will print "UEFI Hello World!" to the
-// UEFI Console based on PCD setting.
+// Loads kernel.bin from the current filesystem, copies it to 0x100000,
+// exits UEFI boot services, and jumps to the kernel.
 //
-// It demos how to use EDKII PCD mechanism to make code more flexible.
-//
-// Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+// Copyright (c) 2025, omdxp. All rights reserved.<BR>
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // **/
 
 
-#string STR_MODULE_ABSTRACT             #language en-US "Sample UEFI Application Reference EDKII Module"
+#string STR_MODULE_ABSTRACT             #language en-US "MyOS UEFI bootloader EDKII Module"
 
-#string STR_MODULE_DESCRIPTION          #language en-US "This is a sample shell application that will print UEFI Hello World! to the UEFI Console based on PCD setting. It demonstrates how to use the EDKII PCD mechanism to make code more flexible"
+#string STR_MODULE_DESCRIPTION          #language en-US "Loads kernel.bin from the current filesystem, copies it to memory, exits UEFI boot services, and jumps to the kernel."
 
