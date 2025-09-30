@@ -109,23 +109,6 @@ void panic(const char *msg)
 		;
 }
 
-// void kernel_page()
-// {
-// 	kernel_registers();
-// 	paging_switch(kernel_chunk);
-// }
-
-// struct tss tss;
-// struct gdt gdt_real[MYOS_TOTAL_GDT_SEGMENTS];
-// struct gdt_structured gdt_structured[MYOS_TOTAL_GDT_SEGMENTS] = {
-// 	{.base = 0x00, .limit = 0x00, .type = 0x00},				  // NULL segment
-// 	{.base = 0x00, .limit = 0xffffffff, .type = 0x9a},			  // kernel code segment
-// 	{.base = 0x00, .limit = 0xffffffff, .type = 0x92},			  // kernel data segment
-// 	{.base = 0x00, .limit = 0xffffffff, .type = 0xf8},			  // user code segment
-// 	{.base = 0x00, .limit = 0xffffffff, .type = 0xf2},			  // user data segment
-// 	{.base = (uint32_t)&tss, .limit = sizeof(tss), .type = 0xe9}, // TSS segment
-// };
-
 struct tss tss;
 extern struct gdt_entry gdt[];
 
