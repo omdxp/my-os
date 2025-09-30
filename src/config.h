@@ -1,5 +1,7 @@
 #pragma once
 
+#define MYOS_KERNEL_LOCATION 0x100000
+
 #define KERNEL_CODE_SELECTOR 0x08
 #define KERNEL_DATA_SELECTOR 0x10
 
