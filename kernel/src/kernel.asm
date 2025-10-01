@@ -1,4 +1,4 @@
-[BITS 32]
+[BITS 64]
 
 global _start
 global kernel_registers
@@ -12,44 +12,9 @@ LONG_MODE_CODE_SEG equ 0x18
 LONG_MODE_DATA_SEG equ 0x20
 
 _start:
-	mov ax, DATA_SEG
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-	mov ss, ax
+	cli					 ; clear interrupts
+	jmp long_mode_entry
 
-	; setup stack
-	mov ebp, 0x00200000
-	mov esp, ebp
-
-	; load GDT
-	lgdt [gdt_descriptor]
-
-	; enable PAE in CR4
-	mov eax, cr4
-	or eax, 1 << 5
-	mov cr4, eax
-
-	; setup page tables
-	mov eax, PML4_table
-	mov cr3, eax
-
-	; enable long mode in EFER MSR
-	mov ecx, 0xC0000080
-	rdmsr
-	or eax, 0x100
-	wrmsr
-
-	; enable paging in CR0
-	mov eax, cr0
-	or eax, 1 << 31 ; set PG bit
-	mov cr0, eax
-
-	; jump to 64-bit code segment
-	jmp LONG_MODE_CODE_SEG:long_mode_entry
-
-[BITS 64]
 kernel_registers:
 	; set up segment registers for 64-bit mode
 	mov ax, LONG_MODE_DATA_SEG
@@ -60,6 +25,13 @@ kernel_registers:
 	ret
 
 long_mode_entry:
+	; setup page tables for long mode
+	mov rax, PML4_table ; load address of PML4 table
+	mov cr3, rax        ; load page table base address into CR3
+
+	; load GDT
+	lgdt [gdt_descriptor]
+
 	mov ax, LONG_MODE_DATA_SEG
 	mov ds, ax
 	mov es, ax
@@ -71,6 +43,13 @@ long_mode_entry:
 	mov rsp, 0x00200000
 	mov rbp, rsp
 
+	; code will jump to long_mode_new_gdt_complete
+	; to switch code selector
+	push qword 0x18                       ; code segment selector
+	push qword long_mode_new_gdt_complete ; offset to jump to
+	retfq                                 ; far return to 64-bit mode
+
+long_mode_new_gdt_complete:
 	; remap the PIC
 	mov al, 0x11 ; start initialization in cascade mode
 	out 0x20, al ; send ICW1 to master PIC
@@ -188,7 +167,7 @@ gdt_end:
 
 gdt_descriptor:
 	dw gdt_end - gdt - 1 ; size of GDT
-	dd gdt               ; address of GDT
+	dq gdt               ; address of GDT
 
 
 ; page table definitions
