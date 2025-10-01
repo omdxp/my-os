@@ -22,8 +22,122 @@
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
 
+typedef struct __attribute__((packed)) E820Entry
+{
+  UINT64 base_addr;
+  UINT64 length;
+  UINT32 type;
+  UINT32 extended_attributes;
+} E820Entry;
+
+typedef struct __attribute__((packed)) E820Entries
+{
+  UINT64 count;
+  E820Entry entries[];
+} E820Entries;
+
 EFI_HANDLE imageHandle = NULL;
 EFI_SYSTEM_TABLE *systemTable = NULL;
+
+EFI_STATUS SetupMemoryMaps()
+{
+  EFI_STATUS Status;
+  UINTN MemoryMapSize = 0;
+  EFI_MEMORY_DESCRIPTOR *MemoryMap = NULL;
+  UINTN MapKey;
+  UINTN DescriptorSize;
+  UINT32 DescriptorVersion;
+
+  Status = gBS->GetMemoryMap(
+      &MemoryMapSize,
+      MemoryMap,
+      &MapKey,
+      &DescriptorSize,
+      &DescriptorVersion);
+
+  if (Status != EFI_BUFFER_TOO_SMALL && EFI_ERROR(Status))
+  {
+    Print(L"GetMemoryMap error: %r\n", Status);
+    return Status;
+  }
+
+  // Allocate some extra space for new memory map entries
+  MemoryMapSize += DescriptorSize * 10;
+  MemoryMap = AllocatePool(MemoryMapSize);
+  if (MemoryMap == NULL)
+  {
+    Print(L"AllocatePool MemoryMap error\n");
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = gBS->GetMemoryMap(
+      &MemoryMapSize,
+      MemoryMap,
+      &MapKey,
+      &DescriptorSize,
+      &DescriptorVersion);
+
+  if (EFI_ERROR(Status))
+  {
+    Print(L"GetMemoryMap error: %r\n", Status);
+    FreePool(MemoryMap);
+    return Status;
+  }
+
+  UINTN DescriptorCount = MemoryMapSize / DescriptorSize;
+  EFI_MEMORY_DESCRIPTOR *Descriptor = MemoryMap;
+  UINTN TotalConventionalDescriptors = 0;
+  for (UINTN Index = 0; Index < DescriptorCount; Index++)
+  {
+    if (Descriptor->Type == EfiConventionalMemory)
+    {
+      TotalConventionalDescriptors++;
+    }
+    Descriptor = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)Descriptor + DescriptorSize);
+  }
+
+  EFI_PHYSICAL_ADDRESS MemoryMapLocationE820 = MYOS_MEMORY_MAP_TOTAL_ENTRIES_LOCATION;
+  UINTN MemoryMapSizeE820 = sizeof(UINT64) + TotalConventionalDescriptors * sizeof(E820Entry);
+  Status = gBS->AllocatePages(
+      AllocateAddress,
+      EfiLoaderData,
+      EFI_SIZE_TO_PAGES(MemoryMapSizeE820),
+      &MemoryMapLocationE820);
+
+  if (EFI_ERROR(Status))
+  {
+    Print(L"AllocatePages MemoryMapLocationE820 error: %r\n", Status);
+    FreePool(MemoryMap);
+    return Status;
+  }
+
+  E820Entries *E820 = (E820Entries *)MemoryMapLocationE820;
+  UINTN ConventionalMemoryIndex = 0;
+  Descriptor = MemoryMap;
+  for (UINTN Index = 0; Index < DescriptorCount; Index++)
+  {
+    if (Descriptor->Type == EfiConventionalMemory)
+    {
+      E820Entry *Entry = &E820->entries[ConventionalMemoryIndex++];
+      Entry->base_addr = Descriptor->PhysicalStart;
+      Entry->length = Descriptor->NumberOfPages * 4096;
+      Entry->type = 1; // Usable RAM
+      Entry->extended_attributes = 0;
+      Print(L"E820 Entry %u: BaseAddr: 0x%lx, Length: 0x%lx, Type: %u\n",
+            ConventionalMemoryIndex - 1,
+            Entry->base_addr,
+            Entry->length,
+            Entry->type);
+      ConventionalMemoryIndex++;
+    }
+    Descriptor = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)Descriptor + DescriptorSize);
+  }
+
+  E820->count = TotalConventionalDescriptors;
+  Print(L"E820 Total Entries: %lu\n", E820->count);
+  FreePool(MemoryMap);
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out, UINTN *BufferSize_Out)
 {
@@ -187,6 +301,15 @@ UefiMain(
   // copy kernel to 0x100000
   CopyMem((VOID *)KernelBase, KernelBuffer, KernelBufferSize);
   Print(L"Kernel copied to %p\n", (VOID *)KernelBase);
+
+  // setup memory maps
+  Status = SetupMemoryMaps();
+  if (EFI_ERROR(Status))
+  {
+    Print(L"SetupMemoryMaps error: %r\n", Status);
+    FreePool(KernelBuffer);
+    return Status;
+  }
 
   // end uefi services
   gBS->ExitBootServices(imageHandle, 0);
