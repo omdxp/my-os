@@ -284,6 +284,15 @@ UefiMain(
 
   Print(L"KernelBuffer: %p, KernelBufferSize: %u\n", KernelBuffer, KernelBufferSize);
 
+  // setup memory maps
+  Status = SetupMemoryMaps();
+  if (EFI_ERROR(Status))
+  {
+    Print(L"SetupMemoryMaps error: %r\n", Status);
+    FreePool(KernelBuffer);
+    return Status;
+  }
+
   // kernel must be mapped at 0x100000
   EFI_PHYSICAL_ADDRESS KernelBase = MYOS_KERNEL_LOCATION;
   Status = gBS->AllocatePages(
@@ -301,15 +310,6 @@ UefiMain(
   // copy kernel to 0x100000
   CopyMem((VOID *)KernelBase, KernelBuffer, KernelBufferSize);
   Print(L"Kernel copied to %p\n", (VOID *)KernelBase);
-
-  // setup memory maps
-  Status = SetupMemoryMaps();
-  if (EFI_ERROR(Status))
-  {
-    Print(L"SetupMemoryMaps error: %r\n", Status);
-    FreePool(KernelBuffer);
-    return Status;
-  }
 
   // end uefi services
   gBS->ExitBootServices(imageHandle, 0);
