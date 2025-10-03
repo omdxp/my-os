@@ -45,3 +45,4 @@ bool multiheap_is_ready(struct multiheap *mh);
 bool multiheap_is_address_virtual(struct multiheap *mh, void *addr);
 struct multiheap_single_heap *multiheap_get_heap_for_address(struct multiheap *mh, void *addr);
 static bool multiheap_heap_allows_paging(struct multiheap_single_heap *mhs);
+void *multiheap_realloc(struct multiheap *mh, void *old_ptr, size_t new_size);

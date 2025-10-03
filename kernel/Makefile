@@ -1,5 +1,5 @@
 TARGET ?= x86_64-elf
-FILES = ./build/kernel.asm.o ./build/kernel.o ./build/string/string.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/memory/memory.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/multiheap.o ./build/io/io.asm.o ./build/idt/idt.o ./build/idt/idt.asm.o ./build/task/task.asm.o ./build/task/task.o ./build/task/process.o ./build/fs/fat/fat16.o ./build/fs/file.o ./build/fs/pparser.o ./build/disk/disk.o ./build/disk/streamer.o ./build/gdt/gdt.o ./build/task/tss.asm.o ./build/keyboard/keyboard.o ./build/keyboard/ps2.o ./build/isr80h/isr80h.o ./build/isr80h/io.o ./build/isr80h/misc.o ./build/isr80h/heap.o ./build/isr80h/process.o ./build/loader/formats/elf.o ./build/loader/formats/elfloader.o ./build/idt/irq.o
+FILES = ./build/kernel.asm.o ./build/kernel.o ./build/string/string.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/memory/memory.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/multiheap.o ./build/io/io.asm.o ./build/idt/idt.o ./build/idt/idt.asm.o ./build/task/task.asm.o ./build/task/task.o ./build/task/process.o ./build/fs/fat/fat16.o ./build/fs/file.o ./build/fs/pparser.o ./build/disk/disk.o ./build/disk/streamer.o ./build/gdt/gdt.o ./build/task/tss.asm.o ./build/keyboard/keyboard.o ./build/keyboard/ps2.o ./build/isr80h/isr80h.o ./build/isr80h/io.o ./build/isr80h/misc.o ./build/isr80h/heap.o ./build/isr80h/process.o ./build/loader/formats/elf.o ./build/loader/formats/elfloader.o ./build/idt/irq.o ./build/disk/gpt.o ./build/lib/vector.o
 INCLUDES = -I./src
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -103,6 +103,12 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 
 ./build/disk/disk.o: ./src/disk/disk.c
 	$(TARGET)-gcc $(INCLUDES) -I./src/disk $(FLAGS) -std=gnu99 -c ./src/disk/disk.c -o ./build/disk/disk.o
+
+./build/disk/gpt.o: ./src/disk/gpt.c
+	$(TARGET)-gcc $(INCLUDES) -I./src/disk $(FLAGS) -std=gnu99 -c ./src/disk/gpt.c -o ./build/disk/gpt.o
+
+./build/lib/vector.o: ./src/lib/vector.c
+	$(TARGET)-gcc $(INCLUDES) -I./src/lib $(FLAGS) -std=gnu99 -c ./src/lib/vector.c -o ./build/lib/vector.o
 
 ./build/disk/streamer.o: ./src/disk/streamer.c
 	$(TARGET)-gcc $(INCLUDES) -I./src/disk $(FLAGS) -std=gnu99 -c ./src/disk/streamer.c -o ./build/disk/streamer.o

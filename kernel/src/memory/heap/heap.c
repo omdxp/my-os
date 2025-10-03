@@ -133,6 +133,25 @@ int64_t heap_address_to_block(struct heap *heap, void *address)
 	return ((int64_t)(address - heap->saddr)) / MYOS_HEAP_BLOCK_SIZE;
 }
 
+bool heap_is_block_range_free(struct heap *heap, size_t starting_block, size_t ending_block)
+{
+	struct heap_table *table = heap->table;
+	if (starting_block >= table->total || ending_block >= table->total || starting_block > ending_block)
+	{
+		return false;
+	}
+
+	for (size_t i = starting_block; i <= ending_block; i++)
+	{
+		if (heap_get_entry_type(table->entries[i]) != HEAP_BLOCK_TABLE_ENTRY_FREE)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 size_t heap_allocation_block_count(struct heap *heap, void *starting_address)
 {
 	size_t count = 0;
@@ -247,6 +266,81 @@ void *heap_malloc(struct heap *heap, size_t size)
 	size_t aligned_size = heap_align_value_to_upper(size);
 	int64_t total_blocks = aligned_size / MYOS_HEAP_BLOCK_SIZE;
 	return heap_malloc_blocks(heap, total_blocks);
+}
+
+void *heap_realloc(struct heap *heap, void *old_ptr, size_t new_size)
+{
+	if (!old_ptr)
+	{
+		return heap_malloc(heap, new_size);
+	}
+
+	if (new_size == 0)
+	{
+		heap_free(heap, old_ptr);
+		return NULL;
+	}
+
+	size_t current_alloc_blocks = heap_allocation_block_count(heap, old_ptr);
+	int64_t starting_block = heap_address_to_block(heap, old_ptr);
+	int64_t ending_block = starting_block + current_alloc_blocks - 1;
+	size_t new_size_aligned = heap_align_value_to_upper(new_size);
+	size_t new_total_blocks = new_size_aligned / MYOS_HEAP_BLOCK_SIZE;
+	size_t old_total_size = current_alloc_blocks * MYOS_HEAP_BLOCK_SIZE;
+
+	if (current_alloc_blocks == new_total_blocks)
+	{
+		return old_ptr;
+	}
+
+	if (current_alloc_blocks > new_total_blocks)
+	{
+		// shrinking allocation
+		int64_t blocks_to_free = starting_block + new_total_blocks;
+		heap_mark_blocks_free(heap, blocks_to_free);
+		if (new_total_blocks > 0)
+		{
+			heap->table->entries[starting_block + new_total_blocks - 1] &= ~HEAP_BLOCK_HAS_NEXT;
+		}
+
+		// adjust counts
+		size_t freed_blocks = current_alloc_blocks - new_total_blocks;
+		heap->used_blocks -= freed_blocks;
+		heap->free_blocks += freed_blocks;
+		return old_ptr;
+	}
+
+	// expanding allocation
+	size_t extra_blocks = new_total_blocks - current_alloc_blocks;
+	size_t extension_start = ending_block + 1;
+	size_t extension_end = extension_start + extra_blocks - 1;
+	if (heap_is_block_range_free(heap, extension_start, extension_end))
+	{
+		// we can expand in place
+		for (size_t i = extension_start; i < extension_end; i++)
+		{
+			heap->table->entries[i] = HEAP_BLOCK_TABLE_ENTRY_TAKEN | HEAP_BLOCK_HAS_NEXT;
+		}
+
+		heap->table->entries[extension_end] = HEAP_BLOCK_TABLE_ENTRY_TAKEN;
+		heap->table->entries[ending_block] |= HEAP_BLOCK_HAS_NEXT;
+
+		// adjust counts
+		heap->used_blocks += extra_blocks;
+		heap->free_blocks -= extra_blocks;
+		return old_ptr;
+	}
+
+	// need to allocate new block and copy data
+	void *new_addr = heap_zalloc(heap, new_size_aligned);
+	if (!new_addr)
+	{
+		return NULL;
+	}
+
+	memcpy(new_addr, old_ptr, old_total_size);
+	heap_free(heap, old_ptr);
+	return new_addr;
 }
 
 void heap_free(struct heap *heap, void *ptr)

@@ -40,6 +40,7 @@ int heap_create(struct heap *heap, void *ptr, void *end, struct heap_table *tabl
 void *heap_malloc(struct heap *heap, size_t size);
 void heap_free(struct heap *heap, void *ptr);
 void *heap_zalloc(struct heap *heap, size_t size);
+void *heap_realloc(struct heap *heap, void *old_ptr, size_t new_size);
 
 int64_t heap_address_to_block(struct heap *heap, void *address);
 size_t heap_allocation_block_count(struct heap *heap, void *starting_address);
@@ -47,6 +48,7 @@ size_t heap_total_size(struct heap *heap);
 size_t heap_total_used(struct heap *heap);
 size_t heap_total_available(struct heap *heap);
 bool heap_is_address_within_heap(struct heap *heap, void *addr);
+bool heap_is_block_range_free(struct heap *heap, size_t starting_block, size_t ending_block);
 
 uintptr_t heap_align_value_to_upper(uintptr_t val);
 uintptr_t heap_align_value_to_lower(uintptr_t val);

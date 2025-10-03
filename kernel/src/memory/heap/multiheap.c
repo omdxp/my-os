@@ -133,6 +133,28 @@ void multiheap_get_heap_and_paging_heap_for_address(struct multiheap *mh, void *
 	*real_phys_addr = real_addr;
 }
 
+void *multiheap_realloc(struct multiheap *mh, void *old_ptr, size_t new_size)
+{
+	struct multiheap_single_heap *paging_heap = NULL;
+	struct multiheap_single_heap *phys_heap = NULL;
+	struct multiheap_single_heap *heap_to_use = NULL;
+	void *real_phys_addr = NULL;
+	multiheap_get_heap_and_paging_heap_for_address(mh, old_ptr, &phys_heap, &paging_heap, &real_phys_addr);
+	if (paging_heap)
+	{
+		panic("multiheap_realloc: cannot realloc from paging heap\n");
+	}
+
+	heap_to_use = phys_heap;
+	if (!heap_to_use)
+	{
+		// create new allocation
+		return multiheap_alloc(mh, new_size);
+	}
+
+	return heap_realloc(heap_to_use->heap, old_ptr, new_size);
+}
+
 size_t multiheap_allocation_block_count(struct multiheap *mh, void *ptr)
 {
 	struct multiheap_single_heap *paging_heap = NULL;
