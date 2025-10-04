@@ -3,12 +3,13 @@
 #include "string/string.h"
 #include "memory/heap/kheap.h"
 #include "memory/memory.h"
+#include "disk/disk.h"
 #include "status.h"
 
 static int pathparser_path_valid_format(const char *filename)
 {
 	int len = strnlen(filename, MYOS_MAX_PATH);
-	return (len >= 3 && isdigit(filename[0]) && memcmp((void *)&filename[1], ":/", 2) == 0);
+	return (len >= 3 && (isdigit(filename[0]) || filename[0] == '@') && memcmp((void *)&filename[1], ":/", 2) == 0);
 }
 
 static int pathparser_get_drive_by_path(const char **path)
@@ -18,7 +19,18 @@ static int pathparser_get_drive_by_path(const char **path)
 		return -EBADPATH;
 	}
 
-	int drive_no = tonumericdigit(*path[0]);
+	char drive_char = *path[0];
+	int drive_no = tonumericdigit(drive_char);
+	if (drive_char == '@') // primary disk
+	{
+		struct disk *primary_fs_disk = disk_primary_fs_disk();
+		if (!primary_fs_disk)
+		{
+			return -EIO;
+		}
+
+		drive_no = primary_fs_disk->id;
+	}
 
 	// add 3 bytes to skip drive number (.eg 0:/)
 	*path += 3;
