@@ -10,6 +10,7 @@
 #include "task/task.h"
 #include "task/process.h"
 #include "disk/disk.h"
+#include "disk/gpt.h"
 #include "fs/file.h"
 #include "fs/pparser.h"
 #include "string/string.h"
@@ -174,6 +175,9 @@ void kernel_main()
 
 	// initialize disks
 	disk_search_and_init();
+
+	// initialize GPT drives
+	gpt_init();
 
 	// allocate a 1MB stack for the kernel IDT
 	size_t stack_size = 1024 * 1024;

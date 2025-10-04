@@ -18,6 +18,14 @@ struct disk_stream *diskstreamer_new(int disk_id)
 	return streamer;
 }
 
+struct disk_stream *diskstreamer_new_from_disk(struct disk *disk)
+{
+	struct disk_stream *streamer = kzalloc(sizeof(struct disk_stream));
+	streamer->pos = 0;
+	streamer->disk = disk;
+	return streamer;
+}
+
 int diskstreamer_seek(struct disk_stream *stream, int pos)
 {
 	stream->pos = pos;
@@ -26,38 +34,34 @@ int diskstreamer_seek(struct disk_stream *stream, int pos)
 
 int diskstreamer_read(struct disk_stream *stream, void *out, int total)
 {
-	if (total <= 0)
+	int sector = stream->pos / MYOS_SECTOR_SIZE;
+	int offset = stream->pos % MYOS_SECTOR_SIZE;
+	int total_to_read = total;
+	bool overflow = (offset + total_to_read) >= MYOS_SECTOR_SIZE;
+	char buf[MYOS_SECTOR_SIZE];
+	if (overflow)
 	{
-		return -1;
+		total_to_read -= (offset + total_to_read) - MYOS_SECTOR_SIZE;
 	}
 
-	char *outc = out;
-	int remaining = total;
-
-	while (remaining > 0)
+	int res = disk_read_blocks(stream->disk, sector, 1, buf);
+	if (res < 0)
 	{
-		int sector = stream->pos / MYOS_SECTOR_SIZE;
-		int offset = stream->pos % MYOS_SECTOR_SIZE;
-		int chunk = MYOS_SECTOR_SIZE - offset;
-		if (chunk > remaining)
-		{
-			chunk = remaining;
-		}
-
-		char buf[MYOS_SECTOR_SIZE];
-		int res = disk_read_block(stream->disk, sector, 1, buf);
-		if (res < 0)
-		{
-			return res;
-		}
-
-		memcpy(outc, buf + offset, chunk);
-		outc += chunk;
-		stream->pos += chunk;
-		remaining -= chunk;
+		goto out;
 	}
 
-	return 0;
+	for (int i = 0; i < total_to_read; i++)
+	{
+		*(char *)out++ = buf[offset + i];
+	}
+
+	stream->pos += total_to_read;
+	if (overflow)
+	{
+		res = diskstreamer_read(stream, out, total - total_to_read);
+	}
+out:
+	return res;
 }
 
 void diskstreamer_close(struct disk_stream *stream)
