@@ -44,7 +44,7 @@ int diskstreamer_read(struct disk_stream *stream, void *out, int total)
 		total_to_read -= (offset + total_to_read) - MYOS_SECTOR_SIZE;
 	}
 
-	int res = disk_read_blocks(stream->disk, sector, 1, buf);
+	int res = disk_read_block(stream->disk, sector, 1, buf);
 	if (res < 0)
 	{
 		goto out;
