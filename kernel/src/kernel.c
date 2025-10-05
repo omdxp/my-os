@@ -16,6 +16,7 @@
 #include "string/string.h"
 #include "disk/streamer.h"
 #include "gdt/gdt.h"
+#include "graphics/graphics.h"
 #include "task/tss.h"
 #include "config.h"
 #include "status.h"
@@ -127,6 +128,9 @@ struct paging_desc *kernel_desc()
 	return kernel_paging_desc;
 }
 
+// defined in kernel.asm
+extern struct graphics_info default_graphics_info;
+
 void kernel_main()
 {
 	terminal_init();
@@ -166,6 +170,19 @@ void kernel_main()
 	paging_switch(kernel_paging_desc);
 
 	kheap_post_paging();
+
+	// setup graphics
+	graphics_setup(&default_graphics_info);
+
+	for (int y = 0; y < 100; y++)
+	{
+		for (int x = 0; x < 100; x++)
+		{
+			struct framebuffer_pixel red = {0, 0, 255, 0};
+			graphics_draw_pixel(graphics_screen_info(), x, y, red);
+		}
+	}
+	graphics_redraw_all(); // flush to the real framebuffer
 
 	// initialize the interrupt descriptor table
 	idt_init();

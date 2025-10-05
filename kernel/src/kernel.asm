@@ -3,6 +3,7 @@
 global _start
 global kernel_registers
 global gdt
+global default_graphics_info
 extern kernel_main
 
 ; segment selectors
@@ -50,6 +51,14 @@ long_mode_entry:
 	retfq                                 ; far return to 64-bit mode
 
 long_mode_new_gdt_complete:
+	; copy over the framebuffer info from bootloader
+	mov [default_graphics_info + 0], rdi
+
+	; copy 32-bit values
+	mov [default_graphics_info + 8], edx
+	mov [default_graphics_info + 12], ecx
+	mov [default_graphics_info + 16], esi
+
 	; remap the PIC
 	mov al, 0x11 ; start initialization in cascade mode
 	out 0x20, al ; send ICW1 to master PIC
@@ -188,4 +197,52 @@ PD_table:
 		dq addr + 0x83
 		%assign addr addr + 0x200000 ; next 2 MB
 	%endrep
+
+align 8
+	; struct graphics_info
+	; {
+	; 	struct framebuffer_pixel *framebuffer;
+	; 	uint32_t horizontal_resolution;
+	; 	uint32_t vertical_resolution;
+	; 	uint32_t pixels_per_scanline;
+	; 	struct framebuffer_pixel *pixels;
+	; 	uint32_t width;
+	; 	uint32_t height;
+	; 	uint32_t starting_x;
+	; 	uint32_t starting_y;
+	; 	uint32_t relative_x;
+	; 	uint32_t relative_y;
+	; 	struct graphics_info *parent;
+	; 	struct vector *children;
+	; 	uint32_t flags;
+	; 	uint32_t z_index;
+	; 	struct framebuffer_pixel ignore_color;
+	; 	struct framebuffer_pixel transparency_key;
+	; 	struct
+	; 	{
+	; 		GRAPHICS_MOUSE_CLICK_FUNCTION mouse_click;
+	; 		GRAPHICS_MOUSE_MOVE_FUNCTION mouse_move;
+	; 	} event_handlers;
+	; };
+default_graphics_info:
+	dq 0                 ; struct framebuffer_pixel *framebuffer
+	dd 0                 ; uint32_t horizontal_resolution
+	dd 0                 ; uint32_t vertical_resolution
+	dd 0                 ; uint32_t pixels_per_scanline
+	dd 0                 ; padding for alignment (from c compiler)
+	dq 0                 ; struct framebuffer_pixel *pixels
+	dd 0                 ; uint32_t width
+	dd 0                 ; uint32_t height
+	dd 0                 ; uint32_t starting_x
+	dd 0                 ; uint32_t starting_y
+	dd 0                 ; uint32_t relative_x
+	dd 0                 ; uint32_t relative_y
+	dq 0                 ; struct graphics_info *parent
+	dq 0                 ; struct vector *children
+	dd 0                 ; uint32_t flags
+	dd 0                 ; uint32_t z_index
+	dd 0 			     ; struct framebuffer_pixel ignore_color
+	dd 0                 ; struct framebuffer_pixel transparency_key
+	dq 0                 ; GRAPHICS_MOUSE_CLICK_FUNCTION mouse_click
+	dq 0                 ; GRAPHICS_MOUSE_MOVE_FUNCTION mouse_move
 
