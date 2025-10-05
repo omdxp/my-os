@@ -251,6 +251,38 @@ EFI_STATUS ReadFileFromCurrentFilesystem(CHAR16 *FileName, VOID **Buffer_Out, UI
   *BufferSize_Out = BufferSize;
   return EFI_SUCCESS;
 }
+
+EFI_STATUS GetFrameBufferInfo(EFI_GRAPHICS_OUTPUT_PROTOCOL **GraphicsOutput)
+{
+  EFI_STATUS Status;
+  Status = gBS->LocateProtocol(
+      &gEfiGraphicsOutputProtocolGuid,
+      NULL,
+      (VOID **)GraphicsOutput);
+  if (EFI_ERROR(Status))
+  {
+    Print(L"LocateProtocol GraphicsOutput error: %r\n", Status);
+    return Status;
+  }
+
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
+  UINTN SizeOfInfo;
+  Status = (*GraphicsOutput)->QueryMode(*GraphicsOutput, (*GraphicsOutput)->Mode->Mode, &SizeOfInfo, &Info);
+  if (EFI_ERROR(Status))
+  {
+    Print(L"QueryMode GraphicsOutput error: %r\n", Status);
+    return Status;
+  }
+
+  Print(L"FrameBuffer: Base: 0x%lx, Size: 0x%lx, Width: %u, Height: %u, PixelsPerScanLine: %u\n",
+        (*GraphicsOutput)->Mode->FrameBufferBase,
+        (*GraphicsOutput)->Mode->FrameBufferSize,
+        Info->HorizontalResolution,
+        Info->VerticalResolution,
+        Info->PixelsPerScanLine);
+  return EFI_SUCCESS;
+}
+
 /**
   The user Entry Point for Application. The user code starts with this function
   as the real entry point for the application.
@@ -311,13 +343,50 @@ UefiMain(
   CopyMem((VOID *)KernelBase, KernelBuffer, KernelBufferSize);
   Print(L"Kernel copied to %p\n", (VOID *)KernelBase);
 
+  // get FrameBuffer Info
+  EFI_GRAPHICS_OUTPUT_PROTOCOL *GraphicsOutput = NULL;
+  Status = GetFrameBufferInfo(&GraphicsOutput);
+  if (EFI_ERROR(Status))
+  {
+    Print(L"GetFrameBufferInfo error: %r\n", Status);
+    FreePool(KernelBuffer);
+    return Status;
+  }
+
+  // draw entire screen blue as a test
+  EFI_GRAPHICS_OUTPUT_BLT_PIXEL *FrameBuffer = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *)GraphicsOutput->Mode->FrameBufferBase;
+  UINTN PixelsPerScanLine = GraphicsOutput->Mode->Info->PixelsPerScanLine;
+  UINTN HorizontalResolution = GraphicsOutput->Mode->Info->HorizontalResolution;
+  UINTN VerticalResolution = GraphicsOutput->Mode->Info->VerticalResolution;
+  for (UINTN y = 0; y < VerticalResolution; y++)
+  {
+    for (UINTN x = 0; x < HorizontalResolution; x++)
+    {
+      FrameBuffer[y * PixelsPerScanLine + x].Red = 0;
+      FrameBuffer[y * PixelsPerScanLine + x].Green = 0;
+      FrameBuffer[y * PixelsPerScanLine + x].Blue = 255;
+      FrameBuffer[y * PixelsPerScanLine + x].Reserved = 0;
+    }
+  }
+
   // end uefi services
   gBS->ExitBootServices(imageHandle, 0);
 
+  // pass framebuffer info in registers
+  __asm__ volatile(
+      "movq %0, %%rdi\n\t" // frame buffer base
+      "movq %1, %%rsi\n\t" // pixels per scan line
+      "movq %2, %%rdx\n\t" // horizontal resolution
+      "movq %3, %%rcx\n\t" // vertical resolution
+      :
+      : "r"((UINT64)FrameBuffer),
+        "r"((UINT64)PixelsPerScanLine),
+        "r"((UINT64)HorizontalResolution),
+        "r"((UINT64)VerticalResolution)
+      : "rdi", "rsi", "rdx", "rcx");
+
   // jump to kernel
-  __asm__("jmp *%0"
-          :
-          : "r"(KernelBase));
+  __asm__("jmp *%0" ::"r"(KernelBase));
 
   return EFI_SUCCESS;
 }
