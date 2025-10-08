@@ -120,6 +120,32 @@ void graphics_draw_pixel(struct graphics_info *graphics_info, size_t x, size_t y
 	}
 }
 
+void graphics_draw_image(struct graphics_info *graphics_info, struct image *image, int x, int y)
+{
+	if (!image)
+	{
+		return;
+	}
+
+	if (!graphics_info)
+	{
+		graphics_info = graphics_screen_info();
+	}
+
+	for (size_t lx = 0; lx < (size_t)image->width; lx++)
+	{
+		for (size_t ly = 0; ly < (size_t)image->height; ly++)
+		{
+			size_t sx = x + lx;
+			size_t sy = y + ly;
+
+			image_pixel_data *pixel_data = &((image_pixel_data *)image->data)[ly * image->width + lx];
+			struct framebuffer_pixel pixel = {pixel_data->b, pixel_data->g, pixel_data->r, pixel_data->a};
+			graphics_draw_pixel(graphics_info, sx, sy, pixel);
+		}
+	}
+}
+
 void graphics_redraw_only(struct graphics_info *graphics_info)
 {
 	if (!graphics_info)
@@ -192,5 +218,6 @@ void graphics_setup(struct graphics_info *main_graphics_info)
 	graphics_info_vector = vector_new(sizeof(struct graphics_info *), 4, 0);
 	vector_push(graphics_info_vector, &main_graphics_info);
 
-	// TODO: load bmp format
+	// initialize image formats
+	graphics_image_formats_init();
 }

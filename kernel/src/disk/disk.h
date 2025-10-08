@@ -9,7 +9,7 @@ typedef unsigned int MYOS_DISK_TYPE;
 #define MYOS_DISK_TYPE_REAL 0
 
 // specifies this disk is a partition/virtual disk
-#define MTOS_DISK_TYPE_PARTITION 1
+#define MYOS_DISK_TYPE_PARTITION 1
 
 // represents the kernel filesystem name
 #define MYOS_KERNEL_FILESYSTEM_NAME "MYOSFS     "

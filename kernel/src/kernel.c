@@ -17,6 +17,7 @@
 #include "disk/streamer.h"
 #include "gdt/gdt.h"
 #include "graphics/graphics.h"
+#include "graphics/image/image.h"
 #include "task/tss.h"
 #include "config.h"
 #include "status.h"
@@ -174,16 +175,6 @@ void kernel_main()
 	// setup graphics
 	graphics_setup(&default_graphics_info);
 
-	for (int y = 0; y < 100; y++)
-	{
-		for (int x = 0; x < 100; x++)
-		{
-			struct framebuffer_pixel red = {0, 0, 255, 0};
-			graphics_draw_pixel(graphics_screen_info(), x, y, red);
-		}
-	}
-	graphics_redraw_all(); // flush to the real framebuffer
-
 	// initialize the interrupt descriptor table
 	idt_init();
 
@@ -223,6 +214,11 @@ void kernel_main()
 	// initialize keyboard
 	keyboard_init();
 	print("Keyboard initialized\n");
+
+	// load background image
+	struct image *img = graphics_image_load("@:/background.bmp");
+	graphics_draw_image(NULL, img, 0, 0);
+	graphics_redraw_all();
 
 	// load program
 	struct process *process = 0;

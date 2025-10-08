@@ -64,7 +64,7 @@ int gpt_mount_partitions(struct gpt_partition_table_header *partition_header)
 			continue;
 		}
 
-		res = disk_create_new(MTOS_DISK_TYPE_PARTITION, entry->starting_lba, entry->ending_lba, gpt_primary_disk->sector_size, NULL);
+		res = disk_create_new(MYOS_DISK_TYPE_PARTITION, entry->starting_lba, entry->ending_lba, gpt_primary_disk->sector_size, NULL);
 		if (res < 0)
 		{
 			goto out;

@@ -85,7 +85,7 @@ int disk_create_new(int type, int starting_lba, int ending_lba, size_t sector_si
 		*out_disk = disk;
 	}
 
-	res = vector_push(disk_vector, disk);
+	res = vector_push(disk_vector, &disk);
 	if (res < 0)
 	{
 		goto out;
