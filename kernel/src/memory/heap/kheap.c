@@ -158,7 +158,7 @@ void *kpalloc(size_t size)
 	void *ptr = multiheap_palloc(kernel_multiheap, size);
 	if (!ptr)
 	{
-		return 0;
+		panic("kpalloc: Out of memory\n");
 	}
 	return ptr;
 }

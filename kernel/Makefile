@@ -12,7 +12,7 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 	sudo cp ./programs/echo/echo.elf /mnt/d
 	sudo cp ./programs/shell/shell.elf /mnt/d
 	sudo cp ./programs/simple/build/simple.bin /mnt/d
-	sudo cp ./data/images/background.bmp /mnt/d
+	sudo cp ./data/images/backgrnd.bmp /mnt/d
 
 ./bin/kernel.bin: $(FILES)
 	$(TARGET)-ld -g -relocatable $(FILES) -o ./build/kernelfull.o

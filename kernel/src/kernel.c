@@ -216,7 +216,7 @@ void kernel_main()
 	print("Keyboard initialized\n");
 
 	// load background image
-	struct image *img = graphics_image_load("@:/background.bmp");
+	struct image *img = graphics_image_load("@:/backgrnd.bmp");
 	graphics_draw_image(NULL, img, 0, 0);
 	graphics_redraw_all();
 

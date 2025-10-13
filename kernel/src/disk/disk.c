@@ -74,7 +74,7 @@ int disk_create_new(int type, int starting_lba, int ending_lba, size_t sector_si
 		char primary_drive_fs_name[11] = {0};
 		strncpy(primary_drive_fs_name, MYOS_KERNEL_FILESYSTEM_NAME, strlen(MYOS_KERNEL_FILESYSTEM_NAME));
 		disk->filesystem->volume_name(disk->fs_private, fs_name, sizeof(fs_name));
-		if (strncmp(fs_name, primary_drive_fs_name, strlen(primary_drive_fs_name)) == 0)
+		if (strncmp(fs_name, primary_drive_fs_name, sizeof(fs_name)) == 0)
 		{
 			primary_fs_disk = disk;
 		}
@@ -134,7 +134,7 @@ struct disk *disk_get(int index)
 	}
 
 	struct disk *disk = NULL;
-	vector_at(disk_vector, index, &disk, sizeof(struct disk *));
+	vector_at(disk_vector, index, &disk, sizeof(disk));
 	return disk;
 }
 

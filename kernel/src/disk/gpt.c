@@ -50,7 +50,7 @@ int gpt_mount_partitions(struct gpt_partition_table_header *partition_header)
 	for (size_t i = 0; i < total_entries; i++)
 	{
 		char buffer[entry_size];
-		res = diskstreamer_read(streamer, buffer, entry_size);
+		res = diskstreamer_read(streamer, buffer, sizeof(buffer));
 		if (res < 0)
 		{
 			goto out;

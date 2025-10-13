@@ -95,7 +95,21 @@ build
 
 # Image Creation (requires root)
 cd "$CURRENT_DIR"
-mkdir -p ./bin /mnt/d
+mkdir -p ./bin
+
+# Clean up any existing mounts and loop devices
+if mountpoint -q /mnt/d 2>/dev/null; then
+	info "Unmounting existing /mnt/d..."
+	sudo umount /mnt/d 2>/dev/null || true
+fi
+
+# Detach any loop devices using os.img
+for loop in $(losetup -j ./bin/os.img 2>/dev/null | cut -d: -f1); do
+	info "Detaching existing loop device: $loop"
+	sudo losetup -d "$loop" 2>/dev/null || true
+done
+
+mkdir -p /mnt/d
 
 dd if=/dev/zero bs=1048576 count=700 of=./bin/os.img
 LOOPDEV=$(sudo losetup --find --show --partscan ./bin/os.img)
@@ -111,7 +125,7 @@ sleep 2
 lsblk "$LOOPDEV"
 
 sudo mkfs.vfat -n ABC "${LOOPDEV}p1"
-sudo mkfs.vfat -n MYOS "${LOOPDEV}p2"
+sudo mkfs.vfat -n MYOSFS "${LOOPDEV}p2"
 sudo mount -t vfat "${LOOPDEV}p2" /mnt/d
 
 # Build MyOS Kernel

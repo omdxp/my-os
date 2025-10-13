@@ -87,9 +87,9 @@ void graphics_paste_pixels_to_framebuffer(struct graphics_info *src_info,
 
 			// check for transparency
 			struct framebuffer_pixel no_transparency_color = {0};
-			if (memcmp(&src_info->transparency_key, &no_transparency_color, sizeof(struct framebuffer_pixel)) != 0)
+			if (memcmp(&src_info->transparency_key, &no_transparency_color, sizeof(no_transparency_color)) != 0)
 			{
-				if (memcmp(&pixel, &src_info->transparency_key, sizeof(struct framebuffer_pixel)) == 0)
+				if (memcmp(&pixel, &src_info->transparency_key, sizeof(pixel)) == 0)
 				{
 					continue;
 				}
@@ -101,13 +101,13 @@ void graphics_paste_pixels_to_framebuffer(struct graphics_info *src_info,
 	}
 }
 
-void graphics_draw_pixel(struct graphics_info *graphics_info, size_t x, size_t y, struct framebuffer_pixel pixel)
+void graphics_draw_pixel(struct graphics_info *graphics_info, uint32_t x, uint32_t y, struct framebuffer_pixel pixel)
 {
 	// black pixels can be ignored
 	struct framebuffer_pixel black_pixel = {0};
-	if (memcmp(&graphics_info->ignore_color, &black_pixel, sizeof(struct framebuffer_pixel)) != 0)
+	if (memcmp(&graphics_info->ignore_color, &black_pixel, sizeof(graphics_info->ignore_color)) != 0)
 	{
-		if (memcmp(&pixel, &graphics_info->ignore_color, sizeof(struct framebuffer_pixel)) == 0)
+		if (memcmp(&graphics_info->ignore_color, &pixel, sizeof(graphics_info->ignore_color)) == 0)
 		{
 			return;
 		}
@@ -129,7 +129,7 @@ void graphics_draw_image(struct graphics_info *graphics_info, struct image *imag
 
 	if (!graphics_info)
 	{
-		graphics_info = graphics_screen_info();
+		graphics_info = loaded_graphics_info;
 	}
 
 	for (size_t lx = 0; lx < (size_t)image->width; lx++)
@@ -140,7 +140,11 @@ void graphics_draw_image(struct graphics_info *graphics_info, struct image *imag
 			size_t sy = y + ly;
 
 			image_pixel_data *pixel_data = &((image_pixel_data *)image->data)[ly * image->width + lx];
-			struct framebuffer_pixel pixel = {pixel_data->b, pixel_data->g, pixel_data->r, pixel_data->a};
+			struct framebuffer_pixel pixel = {0};
+			pixel.red = pixel_data->r;
+			pixel.green = pixel_data->g;
+			pixel.blue = pixel_data->b;
+
 			graphics_draw_pixel(graphics_info, sx, sy, pixel);
 		}
 	}

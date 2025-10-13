@@ -46,6 +46,6 @@ struct image_format
 int graphics_image_formats_init();
 void graphics_image_formats_unload();
 struct image *graphics_image_load(const char *path);
-image_pixel_data graphics_image_get_pixel(struct image *img, uint32_t x, uint32_t y);
+image_pixel_data graphics_image_get_pixel(struct image *img, int x, int y);
 struct image *graphics_image_load_from_memory(void *memory, size_t max);
 struct image_format *graphics_image_format_get(const char *mime_type);

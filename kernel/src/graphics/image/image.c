@@ -39,27 +39,24 @@ struct image *graphics_image_load_from_memory(void *memory, size_t max)
 	for (size_t i = 0; i < total_formats; i++)
 	{
 		struct image_format *format = NULL;
-		int res = vector_at(image_formats, i, &format, sizeof(struct image_format *));
+		int res = vector_at(image_formats, i, &format, sizeof(format));
 		if (res < 0)
 		{
 			break;
 		}
 
-		if (format && format->load)
+		image_out = format->load(memory, max);
+		if (image_out)
 		{
-			image_out = format->load(memory, max);
-			if (image_out)
-			{
-				image_out->format = format;
-				break;
-			}
+			image_out->format = format;
+			break;
 		}
 	}
 
 	return image_out;
 }
 
-image_pixel_data graphics_image_get_pixel(struct image *img, uint32_t x, uint32_t y)
+image_pixel_data graphics_image_get_pixel(struct image *img, int x, int y)
 {
 	image_pixel_data pixel = img->data[y * img->width + x];
 	return pixel;
@@ -112,10 +109,7 @@ struct image *graphics_image_load(const char *path)
 	}
 
 out:
-	if (fd >= 0)
-	{
-		fclose(fd);
-	}
+	fclose(fd);
 
 	if (img_memory)
 	{

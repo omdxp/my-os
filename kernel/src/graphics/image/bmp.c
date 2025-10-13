@@ -9,7 +9,7 @@ struct image *bmp_img_load(void *memory, size_t size)
 	int res = 0;
 	struct image *img = NULL;
 	struct bmp_header *header = NULL;
-	struct bmp_image_header *bmp_imaeg_header = NULL;
+	struct bmp_image_header *bmp_image_header = NULL;
 
 	if (size < sizeof(struct bmp_header))
 	{
@@ -20,7 +20,7 @@ struct image *bmp_img_load(void *memory, size_t size)
 	header = (struct bmp_header *)memory;
 
 	// check signature
-	if (memcmp(header->bf_type, BMP_SIGNATURE, 2) != 0)
+	if (memcmp(header->bf_type, BMP_SIGNATURE, sizeof(header->bf_type)) != 0)
 	{
 		res = -EINFORMAT;
 		goto out;
@@ -33,7 +33,7 @@ struct image *bmp_img_load(void *memory, size_t size)
 		goto out;
 	}
 
-	bmp_imaeg_header = (struct bmp_image_header *)((uintptr_t)header + sizeof(struct bmp_header));
+	bmp_image_header = (struct bmp_image_header *)((uintptr_t)header + sizeof(struct bmp_header));
 	img = kzalloc(sizeof(struct image));
 	if (!img)
 	{
@@ -42,13 +42,13 @@ struct image *bmp_img_load(void *memory, size_t size)
 	}
 
 	// check compression
-	if (bmp_imaeg_header->bi_compression != BMP_COMPRESSION_UNCOMPRESSED)
+	if (bmp_image_header->bi_compression != BMP_COMPRESSION_UNCOMPRESSED)
 	{
 		res = -EUNIMP; // only uncompressed is supported
 		goto out;
 	}
 
-	uint16_t bits_per_pixel = bmp_imaeg_header->bi_bits_per_pixel;
+	uint16_t bits_per_pixel = bmp_image_header->bi_bits_per_pixel;
 	if (bits_per_pixel != BIT_PER_PIXEL_16777216_COLORS)
 	{
 		res = -EUNIMP; // only 24-bit BMP is supported
@@ -56,9 +56,9 @@ struct image *bmp_img_load(void *memory, size_t size)
 	}
 
 	uint16_t bytes_per_pixel = bits_per_pixel / 8;
-	bool bottom_up = (bmp_imaeg_header->bi_height > 0);
-	int32_t height = bottom_up ? bmp_imaeg_header->bi_height : -bmp_imaeg_header->bi_height;
-	int32_t width = bmp_imaeg_header->bi_width;
+	bool bottom_up = (bmp_image_header->bi_height > 0);
+	int32_t height = bottom_up ? bmp_image_header->bi_height : -bmp_image_header->bi_height;
+	int32_t width = bmp_image_header->bi_width;
 	if (width <= 0 || height <= 0)
 	{
 		res = -EINFORMAT;
@@ -97,7 +97,7 @@ struct image *bmp_img_load(void *memory, size_t size)
 		int dest_row = bottom_up ? (height - 1 - row) : row;
 		for (int col = 0; col < width; col++)
 		{
-			uint8_t *bmp_pixel = row_ptr + (col * bytes_per_pixel);
+			uint8_t *bmp_pixel = row_ptr + (col * 3);
 			uint8_t b = bmp_pixel[0];
 			uint8_t g = bmp_pixel[1];
 			uint8_t r = bmp_pixel[2];
