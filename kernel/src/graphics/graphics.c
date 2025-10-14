@@ -14,6 +14,8 @@ size_t real_framebuffer_width = 0;				   // real framebuffer width
 size_t real_framebuffer_height = 0;				   // real framebuffer height
 size_t real_framebuffer_pixels_per_scanline = 0;   // real framebuffer pixels per scanline
 
+void graphics_redraw_children(struct graphics_info *graphics_info);
+
 struct graphics_info *graphics_screen_info()
 {
 	return loaded_graphics_info;
@@ -163,6 +165,102 @@ void graphics_redraw_only(struct graphics_info *graphics_info)
 										 graphics_info->starting_x, graphics_info->starting_y);
 }
 
+void graphics_redraw_children(struct graphics_info *graphics_info)
+{
+	size_t total_children = vector_count(graphics_info->children);
+	for (size_t i = 0; i < total_children; i++)
+	{
+		struct graphics_info *child = NULL;
+		int res = vector_at(graphics_info->children, i, &child, sizeof(child));
+		if (res < 0)
+		{
+			continue;
+		}
+
+		if (child)
+		{
+			graphics_redraw(child);
+		}
+	}
+}
+
+void graphics_redraw_region(struct graphics_info *graphics_info, uint32_t local_x, uint32_t local_y, uint32_t width, uint32_t height)
+{
+	if (!graphics_info)
+	{
+		return;
+	}
+
+	if (local_x >= graphics_info->width || local_y >= graphics_info->height)
+	{
+		return;
+	}
+
+	if (local_x + width > graphics_info->width)
+	{
+		return;
+	}
+
+	if (local_y + height > graphics_info->height)
+	{
+		height = graphics_info->height - local_y;
+	}
+
+	uint32_t dst_abs_x = graphics_info->starting_x + local_x;
+	uint32_t dst_abs_y = graphics_info->starting_y + local_y;
+	graphics_paste_pixels_to_framebuffer(graphics_info,
+										 local_x, local_y,
+										 width, height,
+										 dst_abs_x, dst_abs_y);
+
+	uint32_t region_abs_left = dst_abs_x;
+	uint32_t region_abs_top = dst_abs_y;
+	uint32_t region_abs_right = dst_abs_x + width;
+	uint32_t region_abs_bottom = dst_abs_y + height;
+
+	// check each child if it intersects with the region
+	size_t total_children = vector_count(graphics_info->children);
+	for (size_t i = 0; i < total_children; i++)
+	{
+		struct graphics_info *child = NULL;
+		int res = vector_at(graphics_info->children, i, &child, sizeof(child));
+		if (res < 0)
+		{
+			continue;
+		}
+
+		// child absolute coordinates
+		uint32_t child_abs_left = child->starting_x;
+		uint32_t child_abs_top = child->starting_y;
+		uint32_t child_abs_right = child->starting_x + child->width;
+		uint32_t child_abs_bottom = child->starting_y + child->height;
+
+		// compute intersection
+		uint32_t inter_left = MAX(region_abs_left, child_abs_left);
+		uint32_t inter_top = MAX(region_abs_top, child_abs_top);
+		uint32_t inter_right = MAX(region_abs_right, child_abs_right);
+		uint32_t inter_bottom = MIN(region_abs_bottom, child_abs_bottom);
+
+		if (inter_right > inter_left && inter_bottom > inter_top)
+		{
+			// there is an intersection, redraw the intersecting region of the child
+			uint32_t child_local_x = inter_left - child_abs_left;
+			uint32_t child_local_y = inter_top - child_abs_top;
+			uint32_t inter_width = inter_right - inter_left;
+			uint32_t inter_height = inter_bottom - inter_top;
+
+			graphics_redraw_region(child, child_local_x, child_local_y, inter_width, inter_height);
+		}
+	}
+}
+
+void graphics_redraw_graphics_to_screen(struct graphics_info *relative_graphics, uint32_t rel_x, uint32_t rel_y, uint32_t width, uint32_t height)
+{
+	uint32_t abs_screen_x = relative_graphics->starting_x + rel_x;
+	uint32_t abs_screen_y = relative_graphics->starting_y + rel_y;
+	graphics_redraw_region(graphics_screen_info(), abs_screen_x, abs_screen_y, width, height);
+}
+
 void graphics_redraw(struct graphics_info *graphics_info)
 {
 	if (!graphics_info)
@@ -172,7 +270,8 @@ void graphics_redraw(struct graphics_info *graphics_info)
 
 	graphics_redraw_only(graphics_info);
 
-	// TODO: redraw children
+	// redraw children
+	graphics_redraw_children(graphics_info);
 }
 
 void graphics_redraw_all()

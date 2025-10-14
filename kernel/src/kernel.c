@@ -18,6 +18,7 @@
 #include "gdt/gdt.h"
 #include "graphics/graphics.h"
 #include "graphics/image/image.h"
+#include "graphics/font.h"
 #include "task/tss.h"
 #include "config.h"
 #include "status.h"
@@ -187,6 +188,9 @@ void kernel_main()
 	// initialize GPT drives
 	gpt_init();
 
+	// initialize font system
+	font_system_init();
+
 	// allocate a 1MB stack for the kernel IDT
 	size_t stack_size = 1024 * 1024;
 	void *megabyte_stack_tss_end = kzalloc(stack_size);
@@ -216,8 +220,13 @@ void kernel_main()
 	print("Keyboard initialized\n");
 
 	// load background image
-	struct image *img = graphics_image_load("@:/backgrnd.bmp");
-	graphics_draw_image(NULL, img, 0, 0);
+	// struct image *img = graphics_image_load("@:/backgrnd.bmp");
+	// graphics_draw_image(NULL, img, 0, 0);
+	// graphics_redraw_all();
+
+	// draw some text
+	struct framebuffer_pixel white = {255, 255, 255, 0};
+	font_draw_text(graphics_screen_info(), font_get_system_font(), 10, 10, "Welcome to MyOS!", white);
 	graphics_redraw_all();
 
 	// load program
