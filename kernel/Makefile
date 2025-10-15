@@ -1,5 +1,5 @@
 TARGET ?= x86_64-elf
-FILES = ./build/kernel.asm.o ./build/kernel.o ./build/string/string.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/memory/memory.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/multiheap.o ./build/io/io.asm.o ./build/idt/idt.o ./build/idt/idt.asm.o ./build/task/task.asm.o ./build/task/task.o ./build/task/process.o ./build/fs/fat/fat16.o ./build/fs/file.o ./build/fs/pparser.o ./build/disk/disk.o ./build/disk/streamer.o ./build/gdt/gdt.o ./build/task/tss.asm.o ./build/keyboard/keyboard.o ./build/keyboard/ps2.o ./build/isr80h/isr80h.o ./build/isr80h/io.o ./build/isr80h/misc.o ./build/isr80h/heap.o ./build/isr80h/process.o ./build/loader/formats/elf.o ./build/loader/formats/elfloader.o ./build/idt/irq.o ./build/disk/gpt.o ./build/lib/vector.o ./build/graphics/graphics.o ./build/graphics/image/image.o ./build/graphics/image/bmp.o ./build/graphics/font.o
+FILES = ./build/kernel.asm.o ./build/kernel.o ./build/string/string.o ./build/memory/heap/heap.o ./build/memory/heap/kheap.o ./build/memory/memory.o ./build/memory/paging/paging.o ./build/memory/paging/paging.asm.o ./build/memory/heap/multiheap.o ./build/io/io.asm.o ./build/idt/idt.o ./build/idt/idt.asm.o ./build/task/task.asm.o ./build/task/task.o ./build/task/process.o ./build/fs/fat/fat16.o ./build/fs/file.o ./build/fs/pparser.o ./build/disk/disk.o ./build/disk/streamer.o ./build/gdt/gdt.o ./build/task/tss.asm.o ./build/keyboard/keyboard.o ./build/keyboard/ps2.o ./build/isr80h/isr80h.o ./build/isr80h/io.o ./build/isr80h/misc.o ./build/isr80h/heap.o ./build/isr80h/process.o ./build/loader/formats/elf.o ./build/loader/formats/elfloader.o ./build/idt/irq.o ./build/disk/gpt.o ./build/lib/vector.o ./build/graphics/graphics.o ./build/graphics/image/image.o ./build/graphics/image/bmp.o ./build/graphics/font.o ./build/graphics/terminal.o
 INCLUDES = -I./src
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -39,6 +39,9 @@ all: ./bin/boot.bin ./bin/kernel.bin user_programs
 
 ./build/graphics/font.o: ./src/graphics/font.c
 	$(TARGET)-gcc $(INCLUDES) -I./src/graphics $(FLAGS) -std=gnu99 -c ./src/graphics/font.c -o ./build/graphics/font.o
+
+./build/graphics/terminal.o: ./src/graphics/terminal.c
+	$(TARGET)-gcc $(INCLUDES) -I./src/graphics $(FLAGS) -std=gnu99 -c ./src/graphics/terminal.c -o ./build/graphics/terminal.o
 
 ./build/graphics/image/image.o: ./src/graphics/image/image.c
 	$(TARGET)-gcc $(INCLUDES) -I./src/graphics -I./src/graphics/image $(FLAGS) -std=gnu99 -c ./src/graphics/image/image.c -o ./build/graphics/image/image.o

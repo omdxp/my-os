@@ -19,80 +19,23 @@
 #include "graphics/graphics.h"
 #include "graphics/image/image.h"
 #include "graphics/font.h"
+#include "graphics/terminal.h"
 #include "task/tss.h"
 #include "config.h"
 #include "status.h"
 #include "isr80h/isr80h.h"
 #include "keyboard/keyboard.h"
 
-uint16_t *video_mem = 0;
-uint16_t terminal_row = 0;
-uint16_t terminal_col = 0;
-
-uint16_t terminal_make_char(char c, char color)
-{
-	return (color << 8) | c;
-}
-
-void terminal_putchar(size_t x, size_t y, char c, char color)
-{
-	video_mem[(y * VGA_WIDTH) + x] = terminal_make_char(c, color);
-}
-
-void terminal_backspace()
-{
-	if (terminal_row == 0 && terminal_col == 0)
-	{
-		return;
-	}
-
-	if (terminal_col == 0)
-	{
-		terminal_row -= 1;
-		terminal_col = VGA_WIDTH;
-	}
-
-	terminal_col -= 1;
-	terminal_writechar(' ', 15);
-	terminal_col -= 1;
-}
+struct terminal *system_terminal = NULL;
 
 void terminal_writechar(char c, char color)
 {
-	if (c == '\n')
+	if (!system_terminal)
 	{
-		terminal_col = 0;
-		terminal_row += 1;
 		return;
 	}
 
-	if (c == 0x08) // backspace
-	{
-		terminal_backspace();
-		return;
-	}
-
-	terminal_putchar(terminal_col, terminal_row, c, color);
-	terminal_col += 1;
-	if (terminal_col >= VGA_WIDTH)
-	{
-		terminal_col = 0;
-		terminal_row += 1;
-	}
-}
-
-void terminal_init()
-{
-	video_mem = (uint16_t *)(0xB8000);
-	terminal_row = 0;
-	terminal_col = 0;
-	for (size_t y = 0; y < VGA_HEIGHT; y++)
-	{
-		for (size_t x = 0; x < VGA_WIDTH; x++)
-		{
-			terminal_putchar(x, y, ' ', 0);
-		}
-	}
+	terminal_write(system_terminal, c);
 }
 
 void print(const char *str)
@@ -103,8 +46,6 @@ void print(const char *str)
 		terminal_writechar(str[i], 15);
 	}
 }
-
-// static struct paging_4gb_chunk *kernel_chunk = 0;
 
 void panic(const char *msg)
 {
@@ -135,7 +76,6 @@ extern struct graphics_info default_graphics_info;
 
 void kernel_main()
 {
-	terminal_init();
 	print("Welcome to MyOS on 64-bit mode!\n");
 
 	print("Total accessible memory: ");
@@ -175,6 +115,7 @@ void kernel_main()
 
 	// setup graphics
 	graphics_setup(&default_graphics_info);
+	struct graphics_info *screen_info = graphics_screen_info();
 
 	// initialize the interrupt descriptor table
 	idt_init();
@@ -190,6 +131,26 @@ void kernel_main()
 
 	// initialize font system
 	font_system_init();
+
+	// setup terminal system
+	terminal_system_setup();
+	struct font *font = font_get_system_font();
+	if (!font)
+	{
+		panic("kernel_main: font_get_system_font failed\n");
+	}
+	struct framebuffer_pixel font_color = {255, 255, 255, 0};
+	system_terminal = terminal_create(screen_info,
+									  0, 0,
+									  screen_info->horizontal_resolution,
+									  screen_info->vertical_resolution,
+									  font,
+									  font_color,
+									  TERMINAL_FLAG_BACKSPACE_ALLOWED);
+	if (!system_terminal)
+	{
+		panic("kernel_main: terminal_create failed\n");
+	}
 
 	// allocate a 1MB stack for the kernel IDT
 	size_t stack_size = 1024 * 1024;
@@ -223,11 +184,6 @@ void kernel_main()
 	// struct image *img = graphics_image_load("@:/backgrnd.bmp");
 	// graphics_draw_image(NULL, img, 0, 0);
 	// graphics_redraw_all();
-
-	// draw some text
-	struct framebuffer_pixel white = {255, 255, 255, 0};
-	font_draw_text(graphics_screen_info(), font_get_system_font(), 10, 10, "Welcome to MyOS!", white);
-	graphics_redraw_all();
 
 	// load program
 	struct process *process = 0;
