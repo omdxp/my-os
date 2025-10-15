@@ -17,7 +17,7 @@ void *isr80h_comman6_process_load_start(struct interrupt_frame *frame)
 	}
 
 	char path[MYOS_MAX_PATH];
-	strcpy(path, "0:/");
+	strcpy(path, "@:/");
 	strcpy(path + 3, filename);
 
 	struct process *process = 0;
@@ -46,7 +46,7 @@ void *isr80h_comman7_invoke_system_command(struct interrupt_frame *frame)
 	const char *program_name = root_command_argument->argument;
 
 	char path[MYOS_MAX_PATH];
-	strcpy(path, "0:/");
+	strcpy(path, "@:/");
 	strncpy(path + 3, program_name, sizeof(path));
 	if (strstr(path, ".elf") == 0)
 	{

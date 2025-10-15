@@ -358,4 +358,7 @@ void graphics_setup(struct graphics_info *main_graphics_info)
 
 	// initialize image formats
 	graphics_image_formats_init();
+
+	// redraw all graphics
+	graphics_redraw_all();
 }
