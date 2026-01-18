@@ -8,6 +8,9 @@
 #include "kernel.h"
 #include "memory/paging/paging.h"
 #include "loader/formats/elfloader.h"
+#include "lib/vector.h"
+
+int process_close_file_handles(struct process *process);
 
 // current process that is running
 struct process *current_process = 0;
@@ -17,6 +20,7 @@ static struct process *processes[MYOS_MAX_PROCESSES] = {};
 static void process_init(struct process *process)
 {
 	memset(process, 0, sizeof(struct process));
+	process->file_handles = vector_new(sizeof(struct process_file_handle *), 4, 0);
 }
 
 struct process *process_current()
@@ -178,6 +182,7 @@ int process_free_process(struct process *process)
 	int res = 0;
 	process_terminate_allocations(process);
 	process_free_program_data(process);
+	process_close_file_handles(process);
 
 	if (process->stack)
 	{
@@ -553,5 +558,76 @@ out:
 		}
 		// TODO: free process data
 	}
+	return res;
+}
+
+int process_fopen(struct process *process, const char *path, const char *mode)
+{
+	int res = 0;
+	int fd = fopen(path, mode);
+	if (fd <= 0)
+	{
+		res = -EIO;
+		goto out;
+	}
+
+	res = fd;
+
+	// allocate memory for process_file_handle
+	struct process_file_handle *handle = kzalloc(sizeof(struct process_file_handle *));
+	if (!handle)
+	{
+		res = -ENOMEM;
+		goto out;
+	}
+
+	handle->fd = fd;
+	strncpy(handle->file_path, path, sizeof(handle->file_path));
+	strncpy(handle->mode, mode, sizeof(handle->mode));
+
+	// add to process file_handles vector
+	vector_push(process->file_handles, &handle);
+
+out:
+	if (res < 0)
+	{
+		fclose(fd);
+	}
+	return res;
+}
+
+struct process_file_handle *process_file_handle_get(struct process *process, int fd)
+{
+	size_t total_handles = vector_count(process->file_handles);
+	for (size_t i = 0; i < total_handles; i++)
+	{
+		struct process_file_handle *handle = NULL;
+		vector_at(process->file_handles, i, &handle, sizeof(handle));
+		if (handle && handle->fd == fd)
+		{
+			return handle;
+		}
+	}
+
+	return NULL;
+}
+
+int process_close_file_handles(struct process *process)
+{
+	int res = 0;
+	size_t total_handles = vector_count(process->file_handles);
+	for (size_t i = 0; i < total_handles; i++)
+	{
+		struct process_file_handle *handle = NULL;
+		vector_at(process->file_handles, i, &handle, sizeof(handle));
+		if (handle)
+		{
+			fclose(handle->fd);
+			kfree(handle);
+		}
+	}
+
+	vector_free(process->file_handles);
+	process->file_handles = NULL;
 	return res;
 }

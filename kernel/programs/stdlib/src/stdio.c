@@ -28,6 +28,7 @@ int printf(const char *fmt, ...)
 		switch (*++p)
 		{
 		case 'i':
+		case 'd':
 			ival = va_arg(ap, int);
 			print(itoa(ival));
 			break;

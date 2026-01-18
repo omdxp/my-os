@@ -11,6 +11,7 @@ global myos_process_load_start:function
 global myos_system:function
 global myos_process_get_arguments:function
 global myos_exit:function
+global myos_fopen:function
 
 ; void print(const char* filename)
 print:
@@ -78,4 +79,13 @@ myos_process_get_arguments:
 myos_exit:
 	mov rax, 9 ; command 9 exit
 	int 0x80
+	ret
+
+; int myos_fopen(const char* filename, const char* mode)
+myos_fopen:
+	mov rax, 10        ; command 10 fopen
+	push qword rsi     ; variable mode
+	push qword rdi     ; variable filename
+	int 0x80
+	add rsp, 16        ; clean up stack
 	ret

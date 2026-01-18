@@ -28,3 +28,4 @@ void myos_process_get_arguments(struct process_arguments *arguments);
 int myos_system(struct command_argument *arguments);
 int myos_system_run(const char *command);
 void myos_exit();
+int myos_fopen(const char *filename, const char *mode);

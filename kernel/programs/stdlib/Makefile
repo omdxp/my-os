@@ -1,5 +1,5 @@
 TARGET ?= x86_64-elf
-FILES=./build/start.asm.o ./build/myos.asm.o ./build/start.o ./build/stdlib.o ./build/stdio.o ./build/myos.o ./build/string.o ./build/memory.o
+FILES=./build/start.asm.o ./build/myos.asm.o ./build/start.o ./build/stdlib.o ./build/stdio.o ./build/file.o ./build/myos.o ./build/string.o ./build/memory.o
 INCLUDES=-I./src
 FLAGS=-g -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -23,6 +23,9 @@ all: $(FILES)
 
 ./build/stdio.o: ./src/stdio.c
 	$(TARGET)-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/stdio.c -o ./build/stdio.o
+
+./build/file.o: ./src/file.c
+	$(TARGET)-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/file.c -o ./build/file.o
 
 ./build/string.o: ./src/string.c
 	$(TARGET)-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/string.c -o ./build/string.o

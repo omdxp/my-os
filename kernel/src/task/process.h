@@ -28,6 +28,13 @@ struct process_allocation
 	size_t size;
 };
 
+struct process_file_handle
+{
+	int fd;						   // file descriptor
+	char file_path[MYOS_MAX_PATH]; // path to the file
+	char mode[2];				   // file mode (e.g., "r", "w", etc.)
+};
+
 struct process
 {
 	// process ID
@@ -40,6 +47,9 @@ struct process
 
 	// process memory allocations (malloc)
 	struct process_allocation allocations[MYOS_MAX_PROGRAM_ALLOCATIONS];
+
+	// vector of struct process_file_handle*
+	struct vector *file_handles;
 
 	PROCESS_FILETYPE filetype;
 
@@ -79,3 +89,6 @@ void process_free(struct process *process, void *ptr);
 void process_get_arguments(struct process *process, int *argc, char ***argv);
 int process_inject_arguments(struct process *process, struct command_argument *root_argument);
 int process_terminate(struct process *process);
+
+struct process_file_handle *process_file_handle_get(struct process *process, int fd);
+int process_fopen(struct process *process, const char *path, const char *mode);
