@@ -30,3 +30,4 @@ int myos_system_run(const char *command);
 void myos_exit();
 int myos_fopen(const char *filename, const char *mode);
 void myos_fclose(int fd);
+long myos_fread(void *buffer, size_t size, size_t count, long fd);

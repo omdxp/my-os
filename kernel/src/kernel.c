@@ -187,7 +187,7 @@ void kernel_main()
 
 	// load program
 	struct process *process = 0;
-	int res = process_load_switch("@:/shell.elf", &process);
+	int res = process_load_switch("@:/blank.elf", &process);
 	if (res != MYOS_ALL_OK)
 	{
 		print("Error code: ");

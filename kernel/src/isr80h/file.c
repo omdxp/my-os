@@ -44,3 +44,15 @@ void *isr80h_command11_fclose(struct interrupt_frame *frame)
 
 	return NULL;
 }
+
+void *isr80h_command12_fread(struct interrupt_frame *frame)
+{
+	int res = 0;
+	void *buffer_virt_addr = task_get_stack_item(task_current(), 0);
+	size_t size = (size_t)(int64_t)task_get_stack_item(task_current(), 1);
+	size_t count = (size_t)(int64_t)task_get_stack_item(task_current(), 2);
+	long fd = (long)(int64_t)task_get_stack_item(task_current(), 3);
+
+	res = process_fread(process_current(), buffer_virt_addr, size, count, (int)fd);
+	return (void *)(int64_t)res;
+}

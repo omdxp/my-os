@@ -13,6 +13,7 @@ global myos_process_get_arguments:function
 global myos_exit:function
 global myos_fopen:function
 global myos_fclose:function
+global myos_fread:function
 
 ; void print(const char* filename)
 print:
@@ -97,4 +98,15 @@ myos_fclose:
 	push qword rdi     ; variable fd
 	int 0x80
 	add rsp, 8         ; clean up stack
+	ret
+
+; long myos_fread(void* buffer, size_t size, size_t count, long fd)
+myos_fread:
+	mov rax, 12        ; command 12 fread
+	push qword rcx     ; variable fd
+	push qword rdx     ; variable count
+	push qword rsi     ; variable size
+	push qword rdi     ; variable ptr
+	int 0x80
+	add rsp, 32        ; clean up stack
 	ret

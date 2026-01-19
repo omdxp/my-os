@@ -9,6 +9,7 @@
 #include "memory/paging/paging.h"
 #include "loader/formats/elfloader.h"
 #include "lib/vector.h"
+#include <stdbool.h>
 
 int process_close_file_handles(struct process *process);
 
@@ -20,6 +21,7 @@ static struct process *processes[MYOS_MAX_PROCESSES] = {};
 static void process_init(struct process *process)
 {
 	memset(process, 0, sizeof(struct process));
+	process->allocations = vector_new(sizeof(struct process_allocation), 10, 0);
 	process->file_handles = vector_new(sizeof(struct process_file_handle *), 4, 0);
 }
 
@@ -44,43 +46,86 @@ int process_switch(struct process *process)
 	return 0;
 }
 
-static int process_find_free_allocation_index(struct process *process)
+int process_find_free_allocation_index(struct process *process)
 {
-	int res = -ENOMEM;
-	for (int i = 0; i < MYOS_MAX_PROGRAM_ALLOCATIONS; i++)
+	int res = 0;
+	bool found = false;
+	size_t allocation_size = vector_count(process->allocations);
+	for (size_t i = 0; i < allocation_size; i++)
 	{
-		if (process->allocations[i].ptr == 0)
+		struct process_allocation allocation;
+		res = vector_at(process->allocations, i, &allocation, sizeof(allocation));
+		if (res < 0)
 		{
+			break;
+		}
+
+		if (allocation.ptr == NULL)
+		{
+			found = true;
 			res = i;
 			break;
 		}
 	}
 
+	if (!found)
+	{
+		struct process_allocation allocation = {0};
+		res = vector_push(process->allocations, &allocation);
+	}
+
+	return res;
+}
+
+int process_allocation_set_map(struct process *process, int allocation_entry_index, void *ptr, size_t size)
+{
+	int res = paging_map_to(process->task->paging_desc, ptr, ptr, paging_align_address(ptr + size), PAGING_IS_PRESENT | PAGING_IS_WRITEABLE | PAGING_ACCESS_FROM_ALL);
+	if (res < 0)
+	{
+		goto out;
+	}
+
+	struct process_allocation allocation;
+	res = vector_at(process->allocations, allocation_entry_index, &allocation, sizeof(allocation));
+	if (res < 0)
+	{
+		goto out;
+	}
+
+	allocation.ptr = ptr;
+	allocation.end = ptr + size;
+	allocation.size = size;
+	res = vector_push(process->allocations, &allocation);
+
+	vector_overwrite(process->allocations, allocation_entry_index, &allocation, sizeof(allocation));
+
+out:
 	return res;
 }
 
 void *process_malloc(struct process *process, size_t size)
 {
+	int res = 0;
 	void *ptr = kzalloc(size);
 	if (!ptr)
 	{
+		res = -ENOMEM;
 		goto out_error;
 	}
 
 	int index = process_find_free_allocation_index(process);
 	if (index < 0)
 	{
+		res = -ENOMEM;
 		goto out_error;
 	}
 
-	int res = paging_map_to(process->task->paging_desc, ptr, ptr, paging_align_address(ptr + size), PAGING_IS_PRESENT | PAGING_IS_WRITEABLE | PAGING_ACCESS_FROM_ALL);
+	res = process_allocation_set_map(process, index, ptr, size);
 	if (res < 0)
 	{
+		res = -ENOMEM;
 		goto out_error;
 	}
-
-	process->allocations[index].ptr = ptr;
-	process->allocations[index].size = size;
 
 	return ptr;
 
@@ -95,9 +140,17 @@ out_error:
 
 static bool process_is_process_pointer(struct process *process, void *ptr)
 {
-	for (int i = 0; i < MYOS_MAX_PROGRAM_ALLOCATIONS; i++)
+	size_t total_allocations = vector_count(process->allocations);
+	for (size_t i = 0; i < total_allocations; i++)
 	{
-		if (process->allocations[i].ptr == ptr)
+		struct process_allocation allocation;
+		int res = vector_at(process->allocations, i, &allocation, sizeof(allocation));
+		if (res < 0)
+		{
+			break;
+		}
+
+		if (allocation.ptr == ptr)
 		{
 			return true;
 		}
@@ -108,36 +161,69 @@ static bool process_is_process_pointer(struct process *process, void *ptr)
 
 static void process_allocation_unjoin(struct process *process, void *ptr)
 {
-	for (int i = 0; i < MYOS_MAX_PROGRAM_ALLOCATIONS; i++)
+	size_t total_allocations = vector_count(process->allocations);
+	for (size_t i = 0; i < total_allocations; i++)
 	{
-		if (process->allocations[i].ptr == ptr)
+		struct process_allocation allocation;
+		int res = vector_at(process->allocations, i, &allocation, sizeof(allocation));
+		if (res < 0)
 		{
-			process->allocations[i].ptr = 0x00;
-			process->allocations[i].size = 0;
+			break;
+		}
+
+		if (allocation.ptr == ptr)
+		{
+			allocation.ptr = NULL;
+			allocation.size = 0;
+			allocation.end = NULL;
+			vector_overwrite(process->allocations, i, &allocation, sizeof(allocation));
+			return;
 		}
 	}
 }
 
-static struct process_allocation *process_get_allocation_by_addr(struct process *process, void *addr)
+int process_get_allocation_by_start_addr(struct process *process, void *addr, struct process_allocation *allocation_out)
 {
-	for (int i = 0; i < MYOS_MAX_PROGRAM_ALLOCATIONS; i++)
+	size_t total_allocations = vector_count(process->allocations);
+	for (size_t i = 0; i < total_allocations; i++)
 	{
-		if (process->allocations[i].ptr == addr)
+		struct process_allocation allocation;
+		int res = vector_at(process->allocations, i, &allocation, sizeof(allocation));
+		if (res < 0)
 		{
-			return &process->allocations[i];
+			break;
+		}
+
+		if (allocation.ptr == addr)
+		{
+			*allocation_out = allocation;
+			return 0;
 		}
 	}
 
-	return 0;
+	return -EIO;
 }
 
 int process_terminate_allocations(struct process *process)
 {
-	for (int i = 0; i < MYOS_MAX_PROGRAM_ALLOCATIONS; i++)
+	size_t total_allocations = vector_count(process->allocations);
+	for (size_t i = 0; i < total_allocations; i++)
 	{
-		process_free(process, process->allocations[i].ptr); // maybe kfree directly for speed
+		struct process_allocation allocation;
+		int res = vector_at(process->allocations, i, &allocation, sizeof(allocation));
+		if (res < 0)
+		{
+			break;
+		}
+
+		if (allocation.ptr)
+		{
+			process_free(process, allocation.ptr);
+		}
 	}
 
+	vector_free(process->allocations);
+	process->allocations = NULL;
 	return 0;
 }
 
@@ -183,6 +269,10 @@ int process_free_process(struct process *process)
 	process_terminate_allocations(process);
 	process_free_program_data(process);
 	process_close_file_handles(process);
+
+	// free allocations vector
+	vector_free(process->allocations);
+	process->allocations = NULL;
 
 	if (process->stack)
 	{
@@ -301,15 +391,17 @@ out:
 
 void process_free(struct process *process, void *ptr)
 {
+	int res = 0;
 	// unlink the pages from the process for given address
-	struct process_allocation *allocation = process_get_allocation_by_addr(process, ptr);
-	if (!allocation)
+	struct process_allocation allocation;
+	res = process_get_allocation_by_start_addr(process, ptr, &allocation);
+	if (res < 0)
 	{
 		// oops, it's not our pointer
 		return;
 	}
 
-	int res = paging_map_to(process->task->paging_desc, allocation->ptr, allocation->ptr, paging_align_address(allocation->ptr + allocation->size), 0x00);
+	res = paging_map_to(process->task->paging_desc, allocation.ptr, allocation.ptr, paging_align_address(allocation.ptr + allocation.size), 0x00);
 	if (res < 0)
 	{
 		return;
@@ -558,6 +650,121 @@ out:
 		}
 		// TODO: free process data
 	}
+	return res;
+}
+
+bool process_is_stack_memory(struct process *process, void *addr)
+{
+	return (uintptr_t)addr >= MYOS_PROGRAM_VIRTUAL_STACK_ADDRESS_END && (uintptr_t)addr <= MYOS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
+}
+
+int process_get_allocation_by_addr(struct process *process, void *addr, struct process_allocation_request *allocation_request_out)
+{
+	// null the request out
+	memset(allocation_request_out, 0, sizeof(struct process_allocation_request));
+
+	// check if this is stack memory
+	if (process_is_stack_memory(process, addr))
+	{
+		uint64_t addr_int = (uint64_t)addr;
+		uint64_t stack_size = MYOS_USER_PROGRAM_STACK_SIZE;
+
+		// start of stack is higher in memory
+		uint64_t total_bytes_left = MYOS_PROGRAM_VIRTUAL_STACK_ADDRESS_START - addr_int;
+		allocation_request_out->allocation.ptr = (void *)MYOS_PROGRAM_VIRTUAL_STACK_ADDRESS_END;
+		allocation_request_out->allocation.end = (void *)MYOS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
+		allocation_request_out->allocation.size = stack_size;
+		allocation_request_out->flags |= PROCESS_ALLOCATION_REQUEST_IS_STACK_MEMORY;
+		allocation_request_out->peek.addr = addr;
+		allocation_request_out->peek.end = (void *)MYOS_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
+		allocation_request_out->peek.total_bytes_left = total_bytes_left;
+		return 0;
+	}
+
+	// check the heap since it's not stack memory
+	size_t total_allocations = vector_count(process->allocations);
+	for (size_t i = 0; i < total_allocations; i++)
+	{
+		struct process_allocation allocation;
+		int res = vector_at(process->allocations, i, &allocation, sizeof(allocation));
+		if (res < 0)
+		{
+			break;
+		}
+
+		uint64_t allocation_addr = (uint64_t)allocation.ptr;
+		uint64_t allocation_addr_end = (uint64_t)allocation.end;
+		if ((uint64_t)addr >= allocation_addr && (uint64_t)addr <= allocation_addr_end)
+		{
+			size_t bytes_used = (uint64_t)addr - allocation_addr;
+			size_t bytes_left = allocation_addr_end - bytes_used;
+			allocation_request_out->allocation = allocation;
+			allocation_request_out->peek.addr = addr;
+			allocation_request_out->peek.end = (void *)allocation_addr_end;
+			allocation_request_out->peek.total_bytes_left = bytes_left;
+			return 0;
+		}
+	}
+
+	return -EIO;
+}
+
+int process_validate_memory_or_terminate(struct process *process, void *virt_ptr, size_t space_needed)
+{
+	int res = 0;
+	struct process_allocation_request allocation_request;
+	res = process_get_allocation_by_addr(process, virt_ptr, &allocation_request);
+	if (res < 0)
+	{
+		goto out;
+	}
+
+	if (allocation_request.peek.total_bytes_left < space_needed)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+out:
+	if (res < 0)
+	{
+		process_terminate(process);
+	}
+
+	return res;
+}
+
+int process_fread(struct process *process, void *virt_ptr, uint64_t size, uint64_t nmemb, int fd)
+{
+	int res = 0;
+	struct process_file_handle *handle = process_file_handle_get(process, fd);
+	if (!handle)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	size_t true_size = size * nmemb;
+	res = process_validate_memory_or_terminate(process, virt_ptr, true_size);
+	if (res < 0)
+	{
+		goto out;
+	}
+
+	void *phys_ptr = task_virtual_addr_to_phys(process->task, virt_ptr);
+	if (!phys_ptr)
+	{
+		res = -EIO;
+		goto out;
+	}
+
+	res = fread(phys_ptr, size, nmemb, handle->fd);
+	if (res < 0)
+	{
+		goto out;
+	}
+
+out:
 	return res;
 }
 

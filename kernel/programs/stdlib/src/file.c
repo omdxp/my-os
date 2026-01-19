@@ -1,6 +1,5 @@
 #include "file.h"
 #include "myos.h"
-#include <stddef.h>
 
 int fopen(const char *filename, const char *mode)
 {
@@ -10,4 +9,9 @@ int fopen(const char *filename, const char *mode)
 void fclose(int fd)
 {
 	myos_fclose((size_t)fd);
+}
+
+int fread(void *buffer, size_t size, size_t count, long fd)
+{
+	return (int)myos_fread(buffer, size, count, fd);
 }

@@ -25,7 +25,25 @@ struct process_arguments
 struct process_allocation
 {
 	void *ptr;
+	void *end;
 	size_t size;
+};
+
+enum
+{
+	PROCESS_ALLOCATION_REQUEST_IS_STACK_MEMORY = 0x01,
+};
+
+struct process_allocation_request
+{
+	struct process_allocation allocation;
+	int flags;
+	struct
+	{
+		void *addr;
+		void *end;
+		size_t total_bytes_left;
+	} peek;
 };
 
 struct process_file_handle
@@ -46,7 +64,7 @@ struct process
 	struct task *task;
 
 	// process memory allocations (malloc)
-	struct process_allocation allocations[MYOS_MAX_PROGRAM_ALLOCATIONS];
+	struct vector *allocations; // vector of struct process_allocation
 
 	// vector of struct process_file_handle*
 	struct vector *file_handles;
@@ -93,3 +111,4 @@ int process_terminate(struct process *process);
 struct process_file_handle *process_file_handle_get(struct process *process, int fd);
 int process_fopen(struct process *process, const char *path, const char *mode);
 int process_fclose(struct process *process, int fd);
+int process_fread(struct process *process, void *virt_ptr, uint64_t size, uint64_t nmemb, int fd);
