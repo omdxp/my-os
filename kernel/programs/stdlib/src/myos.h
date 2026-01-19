@@ -31,3 +31,4 @@ void myos_exit();
 int myos_fopen(const char *filename, const char *mode);
 void myos_fclose(int fd);
 long myos_fread(void *buffer, size_t size, size_t count, long fd);
+long myos_fseek(long fd, long offset, long whence);

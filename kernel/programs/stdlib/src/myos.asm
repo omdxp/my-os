@@ -14,6 +14,7 @@ global myos_exit:function
 global myos_fopen:function
 global myos_fclose:function
 global myos_fread:function
+global myos_fseek:function
 
 ; void print(const char* filename)
 print:
@@ -109,4 +110,14 @@ myos_fread:
 	push qword rdi     ; variable ptr
 	int 0x80
 	add rsp, 32        ; clean up stack
+	ret
+
+; long myos_fseek(long fd, int offset, int whence)
+myos_fseek:
+	mov rax, 13        ; command 13 fseek
+	push qword rdx     ; variable whence
+	push qword rsi     ; variable offset
+	push qword rdi     ; variable fd
+	int 0x80
+	add rsp, 24        ; clean up stack
 	ret

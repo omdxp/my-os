@@ -56,3 +56,14 @@ void *isr80h_command12_fread(struct interrupt_frame *frame)
 	res = process_fread(process_current(), buffer_virt_addr, size, count, (int)fd);
 	return (void *)(int64_t)res;
 }
+
+void *isr80h_command13_fseek(struct interrupt_frame *frame)
+{
+	int res = 0;
+	long fd = (long)(int64_t)task_get_stack_item(task_current(), 0);
+	long offset = (long)(int64_t)task_get_stack_item(task_current(), 1);
+	long whence = (long)(int64_t)task_get_stack_item(task_current(), 2);
+
+	res = process_fseek(process_current(), fd, offset, whence);
+	return (void *)(int64_t)res;
+}
