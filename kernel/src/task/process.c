@@ -561,6 +561,25 @@ out:
 	return res;
 }
 
+int process_fclose(struct process *process, int fd)
+{
+	int res = 0;
+	struct process_file_handle *handle = process_file_handle_get(process, fd);
+	if (!handle)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	fclose(handle->fd);
+
+	// remove from vector
+	vector_pop_element(process->file_handles, &handle, sizeof(handle));
+	kfree(handle);
+out:
+	return res;
+}
+
 int process_fopen(struct process *process, const char *path, const char *mode)
 {
 	int res = 0;

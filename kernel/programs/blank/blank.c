@@ -16,6 +16,9 @@ int main(int argc, char **argv)
 		printf("Failed to open file blank.elf\n");
 	}
 
+	fclose(fd);
+	printf("Closed file blank.elf\n");
+
 	while (1)
 		;
 

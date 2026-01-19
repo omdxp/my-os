@@ -12,6 +12,7 @@ global myos_system:function
 global myos_process_get_arguments:function
 global myos_exit:function
 global myos_fopen:function
+global myos_fclose:function
 
 ; void print(const char* filename)
 print:
@@ -88,4 +89,12 @@ myos_fopen:
 	push qword rdi     ; variable filename
 	int 0x80
 	add rsp, 16        ; clean up stack
+	ret
+
+; void myos_fclose(size_t fd)
+myos_fclose:
+	mov rax, 11        ; command 11 fclose
+	push qword rdi     ; variable fd
+	int 0x80
+	add rsp, 8         ; clean up stack
 	ret
