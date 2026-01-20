@@ -23,6 +23,13 @@ int main(int argc, char **argv)
 		{
 			printf("Successfully seeked to the beginning of blank.elf\n");
 		}
+
+		struct file_stat stat = {0};
+		int stat_result = fstat(fd, &stat);
+		if (stat_result == 0)
+		{
+			printf("File blank.elf size: %u bytes\n", stat.filesize);
+		}
 	}
 	else
 	{

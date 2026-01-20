@@ -38,6 +38,11 @@ int printf(const char *fmt, ...)
 			print(sval);
 			break;
 
+		case 'u':
+			ival = va_arg(ap, unsigned int);
+			print(utoa(ival));
+			break;
+
 		default:
 			putchar(*p);
 			break;

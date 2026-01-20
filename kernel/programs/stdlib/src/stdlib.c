@@ -32,6 +32,26 @@ char *itoa(int i)
 	return &text[loc];
 }
 
+char *utoa(unsigned int i)
+{
+	static char text[11];
+	int loc = 10;
+	text[10] = 0;
+
+	while (i)
+	{
+		text[--loc] = '0' + (i % 10);
+		i /= 10;
+	}
+
+	if (loc == 10)
+	{
+		text[--loc] = '0';
+	}
+
+	return &text[loc];
+}
+
 void *malloc(size_t size)
 {
 	return myos_malloc(size);

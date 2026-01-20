@@ -20,3 +20,8 @@ int fseek(long fd, int offset, int whence)
 {
 	return (int)myos_fseek(fd, offset, whence);
 }
+
+int fstat(long fd, struct file_stat *filestat_out)
+{
+	return (int)myos_fstat(fd, filestat_out);
+}

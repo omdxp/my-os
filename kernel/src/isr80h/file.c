@@ -67,3 +67,13 @@ void *isr80h_command13_fseek(struct interrupt_frame *frame)
 	res = process_fseek(process_current(), fd, offset, whence);
 	return (void *)(int64_t)res;
 }
+
+void *isr80h_command14_fstat(struct interrupt_frame *frame)
+{
+	int res = 0;
+	long fd = (long)(int64_t)task_get_stack_item(task_current(), 0);
+	struct file_stat *filestat_virt_addr = task_get_stack_item(task_current(), 1);
+
+	res = process_fstat(process_current(), fd, filestat_virt_addr);
+	return (void *)(int64_t)res;
+}

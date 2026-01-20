@@ -734,6 +734,32 @@ out:
 	return res;
 }
 
+int process_fstat(struct process *process, int fd, struct file_stat *virt_filestat_addr)
+{
+	int res = 0;
+	res = process_validate_memory_or_terminate(process, virt_filestat_addr, sizeof(*virt_filestat_addr));
+	if (res < 0)
+	{
+		goto out;
+	}
+
+	struct file_stat *phys_filestat_addr = task_virtual_addr_to_phys(process->task, virt_filestat_addr);
+	if (!phys_filestat_addr)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	res = fstat(fd, phys_filestat_addr);
+	if (res < 0)
+	{
+		goto out;
+	}
+
+out:
+	return res;
+}
+
 int process_fseek(struct process *process, int fd, int offset, FILE_SEEK_MODE whence)
 {
 	int res = 0;
