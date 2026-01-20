@@ -56,7 +56,6 @@ static void task_list_remove(struct task *task)
 
 int task_free(struct task *task)
 {
-	paging_desc_free(task->paging_desc);
 	task_list_remove(task);
 
 	// free task data
@@ -67,16 +66,6 @@ int task_free(struct task *task)
 int task_init(struct task *task, struct process *process)
 {
 	memset(task, 0, sizeof(struct task));
-
-	// map entire 4gb address space to its self
-	task->paging_desc = paging_desc_new(PAGING_MAP_LEVEL_4);
-	if (!task->paging_desc)
-	{
-		return -ENOMEM;
-	}
-
-	// map all memory regions from e820 to this page directory
-	paging_map_e820_memory_regions(task->paging_desc);
 
 	task->registers.ip = MYOS_PROGRAM_VIRTUAL_ADDRESS;
 	if (process->filetype == PROCESS_FILETYPE_ELF)
@@ -134,13 +123,13 @@ out:
 int task_switch(struct task *task)
 {
 	current_task = task;
-	paging_switch(task->paging_desc);
+	paging_switch(task->process->paging_desc);
 	return 0;
 }
 
 struct paging_desc *task_paging_desc(struct task *task)
 {
-	return task->paging_desc;
+	return task->process->paging_desc;
 }
 
 struct paging_desc *task_current_paging_desc()
@@ -150,7 +139,7 @@ struct paging_desc *task_current_paging_desc()
 		panic("task_current_paging_desc: No current task exists!\n");
 	}
 
-	return current_task->paging_desc;
+	return current_task->process->paging_desc;
 }
 
 void task_save_state(struct task *task, struct interrupt_frame *frame)
@@ -269,7 +258,7 @@ void *task_get_stack_item(struct task *task, int index)
 
 void *task_virtual_addr_to_phys(struct task *task, void *virt)
 {
-	return paging_get_physical_address(task->paging_desc, virt);
+	return paging_get_physical_address(task->process->paging_desc, virt);
 }
 
 void task_next()
