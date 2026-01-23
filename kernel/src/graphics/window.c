@@ -144,6 +144,81 @@ void window_focus(struct window *window)
 	graphics_redraw_graphics_to_screen(window->root_graphics, 0, 0, window->root_graphics->width, window->root_graphics->height);
 }
 
+void window_event_handler_unregister(struct window *window, WINDOW_EVENT_HANDLER handler)
+{
+	vector_pop_element(window->event_handlers.handlers, &handler, sizeof(WINDOW_EVENT_HANDLER));
+}
+
+void window_event_handler_register(struct window *window, WINDOW_EVENT_HANDLER handler)
+{
+	vector_push(window->event_handlers.handlers, &handler);
+}
+
+void window_drop_event_handlers(struct window *window)
+{
+	WINDOW_EVENT_HANDLER handler = NULL;
+	vector_at(window->event_handlers.handlers, 0, &handler, sizeof(WINDOW_EVENT_HANDLER));
+	while (handler)
+	{
+		window_event_handler_unregister(window, handler); // this will pop the handler from the vector
+		vector_at(window->event_handlers.handlers, 0, &handler, sizeof(WINDOW_EVENT_HANDLER));
+	}
+}
+
+void window_free(struct window *window)
+{
+	// drop event handlers
+	window_drop_event_handlers(window);
+
+	// free event handlers vector
+	vector_free(window->event_handlers.handlers);
+
+	vector_pop_element(windows_vector, &window, sizeof(struct window *));
+	terminal_free(window->terminal);
+
+	// free title bar terminal
+	terminal_free(window->title_bar_terminal);
+
+	// free root graphics info
+	// this will also free all child graphics infos
+	graphics_info_free(window->root_graphics);
+
+	kfree(window);
+}
+
+void window_event_push(struct window *window, struct window_event *event)
+{
+	event->window = window;
+	event->win_id = window->id;
+
+	size_t total_handlers = vector_count(window->event_handlers.handlers);
+	for (size_t i = 0; i < total_handlers; i++)
+	{
+		WINDOW_EVENT_HANDLER handler = NULL;
+		vector_at(window->event_handlers.handlers, i, &handler, sizeof(WINDOW_EVENT_HANDLER));
+		if (handler)
+		{
+			handler(window, event);
+		}
+	}
+}
+
+void window_close(struct window *window)
+{
+	struct window_event event = {0};
+	event.type = WINDOW_EVENT_TYPE_WINDOW_CLOSE;
+	window_event_push(window, &event);
+
+	window_free(window);
+	graphics_redraw_all();
+}
+
+int window_event_handler(struct window *window, struct window_event *event)
+{
+	// TODO: handle window events here
+	return 0;
+}
+
 struct window *
 window_create(struct graphics_info *graphics_info, struct font *font, const char *title, size_t x, size_t y, size_t width, size_t height, int flags, int id)
 {
@@ -329,7 +404,8 @@ window_create(struct graphics_info *graphics_info, struct font *font, const char
 	size_t child_count = vector_count(window->root_graphics->children);
 	window_set_z_index(window, child_count + 1);
 
-	// TODO: register window event handlers
+	// register window event handlers
+	window_event_handler_register(window, window_event_handler);
 
 	window_focus(window);
 
