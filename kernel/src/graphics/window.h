@@ -107,3 +107,11 @@ struct window
 	char title[WINDOW_MAX_TITLE_LENGTH]; // title of the window
 	int flags;							 // flags for window behavior
 };
+
+int window_system_initialize();
+int window_system_initialize_stage2();
+void window_set_z_index(struct window *window, int z_index);
+void window_unfocus(struct window *window);
+void window_focus(struct window *window);
+struct window *
+window_create(struct graphics_info *graphics_info, struct font *font, const char *title, size_t x, size_t y, size_t width, size_t height, int flags, int id);
