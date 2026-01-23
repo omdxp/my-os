@@ -3,6 +3,15 @@
 #include "graphics/terminal.h"
 #include "graphics/graphics.h"
 #include "config.h"
+#include "lib/vector.h"
+#include "memory/heap/kheap.h"
+#include "keyboard/keyboard.h"
+#include "memory/memory.h"
+#include "string/string.h"
+#include "graphics/font.h"
+#include "task/process.h"
+#include "status.h"
+#include "kernel.h"
 #include <stddef.h>
 #include <stdint.h>
 
