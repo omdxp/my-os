@@ -178,11 +178,10 @@ void kernel_main()
 	// graphics_draw_image(NULL, img, 0, 0);
 	// graphics_redraw_all();
 
-	for (size_t i = 0; i < 5; i++)
-	{
-		print("Another second passes...\n");
-		udelay(1000000); // 1 second
-	}
+	struct window *win = window_create(screen_info, NULL, "MyOS Window", 50, 50, 400, 300, 0, -1);
+	window_redraw(win);
+	while (1)
+		;
 
 	// load program
 	struct process *process = 0;

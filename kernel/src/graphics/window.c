@@ -219,6 +219,93 @@ int window_event_handler(struct window *window, struct window_event *event)
 	return 0;
 }
 
+void window_redraw(struct window *window)
+{
+	graphics_redraw(window->root_graphics);
+}
+
+int window_position_set(struct window *window, size_t new_x, size_t new_y)
+{
+	int res = 0;
+
+	int x_redraw_x = 0;
+	int x_redraw_y = 0;
+	int x_redraw_width = 0;
+	int x_redraw_height = 0;
+
+	int y_redraw_x = 0;
+	int y_redraw_y = 0;
+	int y_redraw_width = 0;
+	int y_redraw_height = 0;
+
+	struct graphics_info *screen = graphics_screen_info();
+	size_t ending_x = new_x + window->width;
+	size_t ending_y = new_y + window->height;
+	if (ending_x > screen->width)
+	{
+		new_x = screen->width - window->width - 1;
+	}
+
+	if (ending_y > screen->height)
+	{
+		new_y = screen->height - window->height - 1;
+	}
+
+	int old_screen_x = window->root_graphics->starting_x;
+	int old_screen_y = window->root_graphics->starting_y;
+
+	window->root_graphics->relative_x = new_x;
+	window->root_graphics->relative_y = new_y;
+	window->root_graphics->starting_x = new_x;
+	window->root_graphics->starting_y = new_y;
+
+	window->x = new_x;
+	window->y = new_y;
+
+	window_bring_to_top(window);
+
+	graphics_info_recalculate(window->root_graphics);
+
+	int x_gap = old_screen_x - (int)window->root_graphics->starting_x;
+	int y_gap = old_screen_y - (int)window->root_graphics->starting_y;
+
+	bool moved_left = x_gap >= 0;
+	bool moved_up = y_gap >= 0;
+
+	x_redraw_x = window->root_graphics->starting_x + window->root_graphics->width;
+	x_redraw_width = x_gap;
+	x_redraw_y = old_screen_y;
+	x_redraw_height = window->root_graphics->height;
+	if (!moved_left)
+	{
+		x_redraw_x = window->root_graphics->starting_x + x_gap;
+		x_redraw_width = -x_gap;
+	}
+
+	y_redraw_x = old_screen_x;
+	y_redraw_y = window->root_graphics->starting_y + window->root_graphics->height;
+	y_redraw_width = window->root_graphics->width;
+	y_redraw_height = y_gap;
+	if (!moved_up)
+	{
+		y_redraw_y = window->root_graphics->starting_y + y_gap;
+		y_redraw_height = -y_gap;
+	}
+
+	if (x_redraw_width > window->root_graphics->width || x_redraw_height > window->root_graphics->height || y_redraw_width > window->root_graphics->width || y_redraw_height > window->root_graphics->height)
+	{
+		graphics_redraw_region(screen, old_screen_x, old_screen_y, window->root_graphics->width, window->root_graphics->height);
+	}
+	else
+	{
+		graphics_redraw_region(screen, x_redraw_x, x_redraw_y, x_redraw_width, x_redraw_height);
+		graphics_redraw_region(screen, y_redraw_x, y_redraw_y, y_redraw_width, y_redraw_height);
+	}
+
+	window_redraw(window);
+	return res;
+}
+
 struct window *
 window_create(struct graphics_info *graphics_info, struct font *font, const char *title, size_t x, size_t y, size_t width, size_t height, int flags, int id)
 {

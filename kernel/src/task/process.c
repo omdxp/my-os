@@ -314,7 +314,7 @@ void process_switch_to_any()
 		int res = vector_at(process_vector, i, &process, sizeof(&process));
 		if (res < 0)
 		{
-			continue;
+			break;
 		}
 
 		if (process)
@@ -586,7 +586,7 @@ int process_get_free_slot()
 		res = vector_at(process_vector, i, &process_out, sizeof(process_out));
 		if (res < 0)
 		{
-			continue;
+			break;
 		}
 
 		if (!process_out)

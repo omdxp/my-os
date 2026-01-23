@@ -23,6 +23,31 @@ struct graphics_info *graphics_screen_info()
 	return loaded_graphics_info;
 }
 
+void graphics_info_recalculate(struct graphics_info *graphics_info)
+{
+	if (graphics_info->parent)
+	{
+		graphics_info->starting_x = graphics_info->relative_x + graphics_info->parent->starting_x;
+		graphics_info->starting_y = graphics_info->relative_y + graphics_info->parent->starting_y;
+	}
+
+	if (graphics_info->children)
+	{
+		size_t total_children = vector_count(graphics_info->children);
+		for (size_t i = 0; i < total_children; i++)
+		{
+			struct graphics_info *child = NULL;
+			int res = vector_at(graphics_info->children, i, &child, sizeof(child));
+			if (res < 0)
+			{
+				break;
+			}
+
+			graphics_info_recalculate(child);
+		}
+	}
+}
+
 void graphics_paste_pixels_to_framebuffer(struct graphics_info *src_info,
 										  uint32_t src_x,
 										  uint32_t src_y,
@@ -176,7 +201,7 @@ void graphics_redraw_children(struct graphics_info *graphics_info)
 		int res = vector_at(graphics_info->children, i, &child, sizeof(child));
 		if (res < 0)
 		{
-			continue;
+			break;
 		}
 
 		if (child)
@@ -228,7 +253,7 @@ void graphics_redraw_region(struct graphics_info *graphics_info, uint32_t local_
 		int res = vector_at(graphics_info->children, i, &child, sizeof(child));
 		if (res < 0)
 		{
-			continue;
+			break;
 		}
 
 		// child absolute coordinates
@@ -401,7 +426,7 @@ void graphics_info_children_free(struct graphics_info *graphics_info)
 			int res = vector_at(graphics_info->children, i, &child, sizeof(child));
 			if (res < 0)
 			{
-				continue;
+				break;
 			}
 
 			if (child)

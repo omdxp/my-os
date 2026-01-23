@@ -95,3 +95,4 @@ void graphics_paste_pixels_to_pixels(struct graphics_info *graphics_info_in,
 									 uint32_t dst_y,
 									 int flags);
 void graphics_info_free(struct graphics_info *graphics_info);
+void graphics_info_recalculate(struct graphics_info *graphics_info);
