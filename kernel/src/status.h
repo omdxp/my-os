@@ -11,3 +11,4 @@
 #define EISTKN 8
 #define EINFORMAT 9
 #define EOUTOFRANGE 10
+#define ETIMEOUT 11

@@ -25,11 +25,11 @@ out:
 
 void mouse_draw_default_impl(struct mouse *mouse)
 {
-	// struct framebuffer_pixel pixel_color = {0};
-	// pixel_color.red = 0xf3;
+	struct framebuffer_pixel pixel_color = {0};
+	pixel_color.red = 0xf3;
 
-	// struct terminal *win_term = window_terminal(mouse->graphic.window);
-	// terminal_draw_rect(win_term, 0, 0, win_term->bounds.width, win_term->bounds.height, pixel_color);
+	struct terminal *win_term = window_terminal(mouse->graphic.window);
+	terminal_draw_rect(win_term, 0, 0, win_term->bounds.width, win_term->bounds.height, pixel_color);
 }
 
 int mouse_register(struct mouse *mouse)

@@ -40,6 +40,11 @@ int window_system_initialize_stage2()
 	return 0;
 }
 
+struct terminal *window_terminal(struct window *window)
+{
+	return window->terminal;
+}
+
 void window_draw_title_bar(struct window *window, struct framebuffer_pixel title_bar_bg_color)
 {
 	if (!window || !window->title_bar_graphics)
