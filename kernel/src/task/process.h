@@ -11,6 +11,9 @@
 #define PROCESS_FILETYPE_BIN 1
 typedef unsigned char PROCESS_FILETYPE;
 
+struct window;
+struct graphics_info;
+
 struct command_argument
 {
 	char argument[512];
@@ -52,6 +55,19 @@ struct process_file_handle
 	int fd;						   // file descriptor
 	char file_path[MYOS_MAX_PATH]; // path to the file
 	char mode[2];				   // file mode (e.g., "r", "w", etc.)
+};
+
+struct process_userspace_window
+{
+	char title[WINDOW_MAX_TITLE_LENGTH];
+	int width;
+	int height;
+};
+
+struct process_window
+{
+	struct process_userspace_window *user_win;
+	struct window *kernel_win;
 };
 
 struct process
@@ -99,6 +115,9 @@ struct process
 		int head;
 	} keyboard;
 
+	// vector of struct process_window*
+	struct vector *windows;
+
 	// process arguments
 	struct process_arguments arguments;
 };
@@ -112,6 +131,7 @@ int process_load(const char *filename, struct process **process);
 struct process *process_current();
 struct process *process_get(int process_id);
 void *process_malloc(struct process *process, size_t size);
+void *process_realloc(struct process *process, void *old_virt_ptr, size_t new_size);
 void process_free(struct process *process, void *ptr);
 void process_get_arguments(struct process *process, int *argc, char ***argv);
 int process_inject_arguments(struct process *process, struct command_argument *root_argument);
@@ -123,3 +143,8 @@ int process_fclose(struct process *process, int fd);
 int process_fread(struct process *process, void *virt_ptr, uint64_t size, uint64_t nmemb, int fd);
 int process_fseek(struct process *process, int fd, int offset, FILE_SEEK_MODE whence);
 int process_fstat(struct process *process, int fd, struct file_stat *virt_filestat_addr);
+struct process_window *process_window_create(struct process *process, char *title, int width, int height, int flags, int id);
+bool process_owns_kernel_window(struct process *process, struct window *kernel_window);
+struct process *process_get_from_kernel_window(struct window *kernel_window);
+struct process_window *process_window_get_from_user_window(struct process *process, struct process_userspace_window *user_win);
+void process_close_windows(struct process *process);

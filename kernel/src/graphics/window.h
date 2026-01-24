@@ -130,3 +130,4 @@ struct window *window_focused();
 bool window_owns_graphics(struct window *window, struct graphics_info *graphics);
 void window_title_set(struct window *window, const char *new_title);
 void window_event_push(struct window *window, struct window_event *event);
+void window_close(struct window *window);

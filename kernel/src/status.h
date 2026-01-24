@@ -11,4 +11,5 @@
 #define EISTKN 8
 #define EINFORMAT 9
 #define EOUTOFRANGE 10
-#define ETIMEOUT 11
+#define ENOTFOUND 11
+#define ETIMEOUT 12

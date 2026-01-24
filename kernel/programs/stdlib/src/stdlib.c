@@ -1,5 +1,6 @@
 #include "stdlib.h"
 #include "myos.h"
+#include "memory.h"
 
 char *itoa(int i)
 {
@@ -55,6 +56,24 @@ char *utoa(unsigned int i)
 void *malloc(size_t size)
 {
 	return myos_malloc(size);
+}
+
+void *calloc(size_t n_memb, size_t size)
+{
+	size_t b_size = n_memb * size;
+	void *ptr = malloc(b_size);
+	if (!ptr)
+	{
+		return NULL;
+	}
+
+	memset(ptr, 0, b_size);
+	return ptr;
+}
+
+void *realloc(void *ptr, size_t new_size)
+{
+	return myos_realloc(ptr, new_size);
 }
 
 void free(void *ptr)

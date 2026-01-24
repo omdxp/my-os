@@ -20,6 +20,7 @@ struct process_arguments
 void print(const char *filename);
 int myos_getkey();
 void *myos_malloc(size_t size);
+void *myos_realloc(void *old_ptr, size_t new_size);
 void myos_free(void *ptr);
 void myos_putchar(char c);
 int myos_getkeyblock();

@@ -16,6 +16,7 @@ global myos_fclose:function
 global myos_fread:function
 global myos_fseek:function
 global myos_fstat:function
+global myos_realloc:function
 
 ; void print(const char* filename)
 print:
@@ -130,4 +131,13 @@ myos_fstat:
 	push qword rdi     ; variable fd
 	int 0x80
 	add rsp, 16        ; clean up stack
+	ret
+
+; void *myos_realloc(void *old_ptr, size_t new_size)
+myos_realloc:
+	mov rax, 15         ; command 15 realloc
+	push qword rsi      ; variable new_size
+	push qword rdi      ; variable old_ptr
+	int 0x80
+	add rsp, 16         ; clean up stack
 	ret
