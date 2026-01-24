@@ -11,6 +11,9 @@ struct window *focused_window = NULL; // currently focused window
 
 int window_autoincrement_id = 100000; // auto-incrementing window ID counter
 
+size_t window_get_largest_z_index();
+int window_recalculate_z_indices();
+
 int window_system_initialize()
 {
 	int res = 0;
@@ -59,9 +62,44 @@ struct window *window_get_at_position(size_t abs_x, size_t abs_y, struct window 
 	return NULL;
 }
 
+struct window *window_get_from_graphics(struct graphics_info *graphics)
+{
+	struct window *window = NULL;
+	size_t total_windows = vector_count(windows_vector);
+	for (size_t i = 0; i < total_windows; i++)
+	{
+		struct window *win = NULL;
+		vector_at(windows_vector, i, &win, sizeof(win));
+		if (win && window_owns_graphics(win, graphics))
+		{
+			window = win;
+			break;
+		}
+	}
+
+	return window;
+}
+
 void window_screen_mouse_move_handler(struct mouse *mouse, int moved_to_x, int moved_to_y)
 {
-	// TODO: implement window dragging logic here
+	if (moving_window)
+	{
+		if (moving_window->title_bar_graphics)
+		{
+			size_t abs_x = moved_to_x - moving_window->title_bar_graphics->width / 2;
+			size_t abs_y = moved_to_y - WINDOW_TITLE_BAR_HEIGHT / 2;
+			window_position_set(moving_window, abs_x, abs_y);
+		}
+
+		size_t rel_x = moved_to_x - moving_window->root_graphics->starting_x;
+		size_t rel_y = moved_to_y - moving_window->root_graphics->starting_y;
+
+		struct window_event event = {0};
+		event.type = WINDOW_EVENT_TYPE_MOUSE_MOVE;
+		event.data.move.x = rel_x;
+		event.data.move.y = rel_y;
+		window_event_push(moving_window, &event);
+	}
 }
 
 void window_click_handler(struct mouse *mouse, int abs_x, int abs_y, MOUSE_CLICK_TYPE type)
@@ -137,7 +175,9 @@ void window_unfocus(struct window *window)
 	window_draw_title_bar(window, black);
 	graphics_redraw_region(graphics_screen_info(), window->root_graphics->starting_x, window->root_graphics->starting_y, window->root_graphics->width, window->root_graphics->height);
 
-	// TODO: setup unfocus event handler
+	struct window_event event = {0};
+	event.type = WINDOW_EVENT_TYPE_LOST_FOCUS;
+	window_event_push(window, &event);
 }
 
 void window_bring_to_top(struct window *window)
@@ -191,6 +231,10 @@ void window_focus(struct window *window)
 
 	// force redraw of of the window
 	graphics_redraw_graphics_to_screen(window->root_graphics, 0, 0, window->root_graphics->width, window->root_graphics->height);
+
+	struct window_event event = {0};
+	event.type = WINDOW_EVENT_TYPE_FOCUS;
+	window_event_push(window, &event);
 }
 
 void window_event_handler_unregister(struct window *window, WINDOW_EVENT_HANDLER handler)
@@ -282,6 +326,75 @@ void window_redraw(struct window *window)
 	graphics_redraw(window->root_graphics);
 }
 
+void window_redraw_body_region(struct window *window, int x, int y, int width, int height)
+{
+	graphics_redraw_region(window->graphics, x, y, width, height);
+}
+
+void window_title_set(struct window *window, const char *new_title)
+{
+	strncpy(window->title, new_title, sizeof(window->title));
+	struct framebuffer_pixel black = {0};
+	window_draw_title_bar(window, black);
+	window_redraw(window);
+}
+
+size_t window_get_largest_z_index()
+{
+	size_t largest_z_index = 0;
+	size_t total_windows = vector_count(windows_vector);
+	if (total_windows > 0)
+	{
+		struct window *win = NULL;
+		vector_at(windows_vector, 0, &win, sizeof(win));
+		if (win)
+		{
+			largest_z_index = win->z_index;
+		}
+	}
+
+	return largest_z_index;
+}
+
+int window_recalculate_z_indices()
+{
+	size_t total_windows = vector_count(windows_vector);
+	size_t last_z_index = 0;
+	for (size_t i = 0; i < total_windows; i++)
+	{
+		struct window *win = NULL;
+		vector_at(windows_vector, i, &win, sizeof(win));
+		if (win)
+		{
+			size_t z_index = vector_count(win->root_graphics->children) + i + 1;
+			graphics_set_z_index(win->root_graphics, z_index);
+			last_z_index = z_index;
+		}
+	}
+
+	return last_z_index;
+}
+
+void window_redraw_region(struct window *window, int x, int y, int width, int height)
+{
+	graphics_redraw_region(window->root_graphics, x, y, width, height);
+}
+
+struct window *window_focused()
+{
+	return focused_window;
+}
+
+bool window_owns_graphics(struct window *window, struct graphics_info *graphics)
+{
+	if (graphics == window->root_graphics)
+	{
+		return true;
+	}
+
+	return graphics_has_ancestor(graphics, window->root_graphics);
+}
+
 int window_position_set(struct window *window, size_t new_x, size_t new_y)
 {
 	int res = 0;
@@ -362,6 +475,43 @@ int window_position_set(struct window *window, size_t new_x, size_t new_y)
 
 	window_redraw(window);
 	return res;
+}
+
+void window_title_bar_moved(struct graphics_info *title_graphics, size_t rel_x, size_t rel_y, size_t abs_x, size_t abs_y)
+{
+	// do nothing
+}
+
+void window_title_bar_clicked(struct graphics_info *title_graphics, size_t rel_x, size_t rel_y, MOUSE_CLICK_TYPE type)
+{
+	struct window *win = window_get_from_graphics(title_graphics);
+	if (win)
+	{
+		size_t close_btn_x = win->title_bar_components.close_button.x;
+		size_t close_btn_y = win->title_bar_components.close_button.y;
+		size_t close_btn_width = win->title_bar_components.close_button.width;
+		size_t close_btn_height = win->title_bar_components.close_button.height;
+		size_t close_btn_end_x = close_btn_x + close_btn_width;
+		size_t close_btn_end_y = close_btn_y + close_btn_height;
+		if (rel_x >= close_btn_x && rel_x < close_btn_end_x &&
+			rel_y >= close_btn_y && rel_y < close_btn_end_y)
+		{
+			window_close(win);
+			win = NULL;
+		}
+		else
+		{
+			// set moving window
+			if (moving_window == win)
+			{
+				moving_window = NULL;
+			}
+			else
+			{
+				moving_window = win;
+			}
+		}
+	}
 }
 
 struct window *
@@ -452,8 +602,11 @@ window_create(struct graphics_info *graphics_info, struct font *font, const char
 			goto out;
 		}
 
-		// TODO: setup click handler
-		// TODO: setup move handler
+		// setup click handler
+		graphics_click_handler_set(title_bar_graphics_info, window_title_bar_clicked);
+
+		// setup move handler
+		graphics_move_handler_set(title_bar_graphics_info, window_title_bar_moved);
 
 		window->title_bar_graphics = title_bar_graphics_info;
 

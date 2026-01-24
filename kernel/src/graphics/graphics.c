@@ -24,6 +24,22 @@ struct graphics_info *graphics_screen_info()
 	return loaded_graphics_info;
 }
 
+bool graphics_has_ancestor(struct graphics_info *graphics_child, struct graphics_info *graphics_ancestor)
+{
+	struct graphics_info *current = graphics_child->parent;
+	while (current)
+	{
+		if (current == graphics_ancestor)
+		{
+			return true;
+		}
+
+		current = current->parent;
+	}
+
+	return false;
+}
+
 void graphics_info_recalculate(struct graphics_info *graphics_info)
 {
 	if (graphics_info->parent)

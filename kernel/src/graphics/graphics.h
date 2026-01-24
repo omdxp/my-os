@@ -103,3 +103,4 @@ graphics_get_child_at_position(struct graphics_info *graphics, size_t x, size_t 
 void graphics_click_handler_set(struct graphics_info *graphics_info, GRAPHICS_MOUSE_CLICK_FUNCTION handler);
 void graphics_move_handler_set(struct graphics_info *graphics_info, GRAPHICS_MOUSE_MOVE_FUNCTION handler);
 void graphics_setup_stage2(struct graphics_info *main_graphics_info);
+bool graphics_has_ancestor(struct graphics_info *graphics_child, struct graphics_info *graphics_ancestor);
