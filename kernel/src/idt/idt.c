@@ -24,6 +24,7 @@ extern void isr80h_wrapper();
 void no_interrupt_handler()
 {
 	outb(0x20, 0x20);
+	outb(0xA0, 0x20); // send EOI to slave PIC
 }
 
 void interrupt_handler(int interrupt, struct interrupt_frame *frame)
@@ -31,12 +32,13 @@ void interrupt_handler(int interrupt, struct interrupt_frame *frame)
 	kernel_page();
 	if (interrupt_callbacks[interrupt] != 0)
 	{
-		task_current_save_state(frame);
+		// task_current_save_state(frame);
 		interrupt_callbacks[interrupt](frame);
 	}
 
-	task_page();
+	// task_page();
 	outb(0x20, 0x20);
+	outb(0xA0, 0x20); // send EOI to slave PIC
 }
 
 void idt_zero()

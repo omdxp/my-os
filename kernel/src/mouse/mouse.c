@@ -1,11 +1,18 @@
 #include "mouse.h"
+#include "ps2.h"
 
 struct vector *mouse_driver_vector = NULL; // holds all registered mouse drivers
 
 int mouse_system_load_static_drivers()
 {
 	int res = 0;
-	// TODO: register static mouse drivers here
+	res = mouse_register(ps2_mouse_get());
+	if (res < 0)
+	{
+		goto out;
+	}
+
+out:
 	return res;
 }
 
@@ -122,7 +129,7 @@ void mouse_click(struct mouse *mouse, MOUSE_CLICK_TYPE type)
 	}
 }
 
-void mouse_move(struct mouse *mouse)
+void mouse_moved(struct mouse *mouse)
 {
 	size_t total_move_handlers = vector_count(mouse->event_handlers.move_handlers);
 	for (size_t i = 0; i < total_move_handlers; i++)

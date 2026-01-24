@@ -27,6 +27,7 @@
 #include "status.h"
 #include "isr80h/isr80h.h"
 #include "keyboard/keyboard.h"
+#include "mouse/mouse.h"
 
 struct terminal *system_terminal = NULL;
 
@@ -115,8 +116,14 @@ void kernel_main()
 	// setup terminal system
 	terminal_system_setup();
 
+	// initialize mouse system
+	mouse_system_init();
+
 	// initialize window system
 	window_system_initialize();
+
+	// load static mouse drivers
+	mouse_system_load_static_drivers();
 
 	// initialize window system stage 2
 	window_system_initialize_stage2();
@@ -179,7 +186,12 @@ void kernel_main()
 	// graphics_redraw_all();
 
 	struct window *win = window_create(screen_info, NULL, "MyOS Window", 50, 50, 400, 300, 0, -1);
-	window_redraw(win);
+	if (win)
+		;
+
+	// enable interrupts
+	enable_interrupts();
+	print("Interrupts enabled\n");
 	while (1)
 		;
 

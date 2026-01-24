@@ -74,9 +74,9 @@ void ps2_mouse_handle_interrupt(struct interrupt_frame *frame)
 	// invert dy to match screen coordinates
 	dy = -dy;
 
-	uint8_t left_button = packet[0] & 0x1;
-	uint8_t right_button = (packet[0] >> 1) & 0x1;
-	uint8_t middle_button = (packet[0] >> 2) & 0x1;
+	uint8_t left_button = packet[0] & 0x01;
+	uint8_t right_button = (packet[0] >> 1) & 0x01;
+	uint8_t middle_button = (packet[0] >> 2) & 0x01;
 
 	int8_t scroll = 0;
 	if (ps2_mouse_packet_size == 4)
@@ -133,7 +133,7 @@ void ps2_mouse_handle_interrupt(struct interrupt_frame *frame)
 		mouse_click(&ps2_mouse, click_type);
 	}
 
-	mouse_move(&ps2_mouse);
+	mouse_moved(&ps2_mouse);
 }
 
 int ps2_mouse_init(struct mouse *mouse)

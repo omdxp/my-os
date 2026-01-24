@@ -61,7 +61,7 @@ void mouse_draw_default_impl(struct mouse *mouse);
 int mouse_register(struct mouse *mouse);
 void mouse_position_set(struct mouse *mouse, size_t x, size_t y);
 void mouse_click(struct mouse *mouse, MOUSE_CLICK_TYPE type);
-void mouse_move(struct mouse *mouse);
+void mouse_moved(struct mouse *mouse);
 void mouse_unregister_move_handler(struct mouse *mouse, MOUSE_MOVE_EVENT_HANDLER_FUNCTION move_handler);
 void mouse_unregister_click_handler(struct mouse *mouse, MOUSE_CLICK_EVENT_HANDLER_FUNCTION click_handler);
 void mouse_register_move_handler(struct mouse *mouse, MOUSE_MOVE_EVENT_HANDLER_FUNCTION move_handler);
