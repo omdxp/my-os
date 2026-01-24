@@ -120,3 +120,4 @@ void window_event_handler_unregister(struct window *window, WINDOW_EVENT_HANDLER
 int window_position_set(struct window *window, size_t new_x, size_t new_y);
 void window_redraw(struct window *window);
 struct terminal *window_terminal(struct window *window);
+void window_click(struct window *window, int rel_x, int rel_y, int type);

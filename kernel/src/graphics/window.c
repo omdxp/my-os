@@ -1,4 +1,5 @@
 #include "window.h"
+#include "mouse/mouse.h"
 
 struct vector *windows_vector; // vector to hold all windows
 
@@ -34,9 +35,52 @@ out:
 	return res;
 }
 
+struct window *window_get_at_position(size_t abs_x, size_t abs_y, struct window *ignored)
+{
+	size_t total_windows = vector_count(windows_vector);
+	for (size_t i = 0; i < total_windows; i++)
+	{
+		struct window *win = NULL;
+		vector_at(windows_vector, total_windows - i - 1, &win, sizeof(win));
+		if (win && win != ignored)
+		{
+			size_t whole_win_width = win->root_graphics->width;
+			size_t whole_win_height = win->root_graphics->height;
+			size_t end_abs_x = win->root_graphics->starting_x + whole_win_width;
+			size_t end_abs_y = win->root_graphics->starting_y + whole_win_height;
+			if (abs_x >= win->x && abs_x < end_abs_x &&
+				abs_y >= win->y && abs_y < end_abs_y)
+			{
+				return win;
+			}
+		}
+	}
+
+	return NULL;
+}
+
+void window_screen_mouse_move_handler(struct mouse *mouse, int moved_to_x, int moved_to_y)
+{
+	// TODO: implement window dragging logic here
+}
+
+void window_click_handler(struct mouse *mouse, int abs_x, int abs_y, MOUSE_CLICK_TYPE type)
+{
+	struct window *win = window_get_at_position(abs_x, abs_y, mouse->graphic.window);
+	if (win)
+	{
+		int rel_x = abs_x - win->root_graphics->starting_x;
+		int rel_y = abs_y - win->root_graphics->starting_y;
+		window_click(win, rel_x, rel_y, type);
+		window_focus(win);
+	}
+}
+
 int window_system_initialize_stage2()
 {
-	// TODO: register mouse move and click handlers and keyboard listeners
+	mouse_register_move_handler(NULL, window_screen_mouse_move_handler);
+	mouse_register_click_handler(NULL, window_click_handler);
+	// TODO: implement keyboard event handlers for window management
 	return 0;
 }
 
@@ -206,6 +250,15 @@ void window_event_push(struct window *window, struct window_event *event)
 			handler(window, event);
 		}
 	}
+}
+
+void window_click(struct window *window, int rel_x, int rel_y, MOUSE_CLICK_TYPE type)
+{
+	struct window_event event = {0};
+	event.type = WINDOW_EVENT_TYPE_MOUSE_CLICK;
+	event.data.click.x = rel_x;
+	event.data.click.y = rel_y;
+	window_event_push(window, &event);
 }
 
 void window_close(struct window *window)

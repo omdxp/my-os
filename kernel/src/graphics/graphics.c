@@ -437,6 +437,11 @@ void graphics_click_handler_set(struct graphics_info *graphics_info, GRAPHICS_MO
 	graphics_info->event_handlers.mouse_click = handler;
 }
 
+void graphics_move_handler_set(struct graphics_info *graphics_info, GRAPHICS_MOUSE_MOVE_FUNCTION handler)
+{
+	graphics_info->event_handlers.mouse_move = handler;
+}
+
 void graphics_mouse_click(struct graphics_info *graphics, size_t rel_x, size_t rel_y, int type)
 {
 	if (graphics->event_handlers.mouse_click)
@@ -448,6 +453,20 @@ void graphics_mouse_click(struct graphics_info *graphics, size_t rel_x, size_t r
 	if (graphics->parent)
 	{
 		graphics_mouse_click(graphics->parent, rel_x + (graphics->relative_x), rel_y + (graphics->relative_y), type);
+	}
+}
+
+void graphics_mouse_move(struct graphics_info *graphics, size_t rel_x, size_t rel_y, size_t abs_x, size_t abs_y)
+{
+	if (graphics->event_handlers.mouse_move)
+	{
+		graphics->event_handlers.mouse_move(graphics, rel_x, rel_y, abs_x, abs_y);
+		return;
+	}
+
+	if (graphics->parent)
+	{
+		graphics_mouse_move(graphics->parent, rel_x + (graphics->relative_x), rel_y + (graphics->relative_y), abs_x, abs_y);
 	}
 }
 
@@ -466,6 +485,20 @@ void graphics_mouse_click_handler(struct mouse *mouse, int clicked_x, int clicke
 		if (graphics_bounds_check(graphics, rel_x, rel_y))
 		{
 			graphics_mouse_click(graphics, rel_x, rel_y, type);
+		}
+	}
+}
+
+void graphics_mouse_move_handler(struct mouse *mouse, int moved_x, int moved_y)
+{
+	struct graphics_info *graphics = graphics_get_at_screen_position(moved_x, moved_y, mouse->graphic.window->root_graphics, true);
+	if (graphics)
+	{
+		size_t rel_x = moved_x - graphics->starting_x;
+		size_t rel_y = moved_y - graphics->starting_y;
+		if (graphics_bounds_check(graphics, rel_x, rel_y))
+		{
+			graphics_mouse_move(graphics, rel_x, rel_y, moved_x, moved_y);
 		}
 	}
 }
@@ -808,4 +841,5 @@ void graphics_setup(struct graphics_info *main_graphics_info)
 void graphics_setup_stage2(struct graphics_info *main_graphics_info)
 {
 	mouse_register_click_handler(NULL, graphics_mouse_click_handler);
+	mouse_register_move_handler(NULL, graphics_mouse_move_handler);
 }
