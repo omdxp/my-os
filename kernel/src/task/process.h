@@ -70,6 +70,9 @@ struct process
 	// process memory allocations (malloc)
 	struct vector *allocations; // vector of struct process_allocation
 
+	// vector of struct userland_ptr*
+	struct vector *kernel_userland_ptrs_vector;
+
 	// vector of struct process_file_handle*
 	struct vector *file_handles;
 

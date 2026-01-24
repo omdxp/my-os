@@ -33,6 +33,7 @@ static void process_init(struct process *process)
 	memset(process, 0, sizeof(struct process));
 	process->allocations = vector_new(sizeof(struct process_allocation), 10, 0);
 	process->file_handles = vector_new(sizeof(struct process_file_handle *), 4, 0);
+	process->kernel_userland_ptrs_vector = vector_new(sizeof(struct userland_ptr *), 4, 0);
 }
 
 struct process *process_current()
@@ -286,6 +287,10 @@ int process_free_process(struct process *process)
 	// free allocations vector
 	vector_free(process->allocations);
 	process->allocations = NULL;
+
+	// free userland pointers vector
+	vector_free(process->kernel_userland_ptrs_vector);
+	process->kernel_userland_ptrs_vector = NULL;
 
 	if (process->stack)
 	{
