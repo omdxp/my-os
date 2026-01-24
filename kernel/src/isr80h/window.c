@@ -30,7 +30,7 @@ void *isr80h_command16_window_create(struct interrupt_frame *frame)
 		goto out;
 	}
 
-	int win_width = (int)(uintptr_t)(task_current(), 1);
+	int win_width = (int)(uintptr_t)task_get_stack_item(task_current(), 1);
 	int win_height = (int)(uintptr_t)task_get_stack_item(task_current(), 2);
 	int win_flags = (int)(uintptr_t)task_get_stack_item(task_current(), 3);
 	int win_id = (int)(uintptr_t)task_get_stack_item(task_current(), 4);

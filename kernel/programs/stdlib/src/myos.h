@@ -36,3 +36,4 @@ void myos_fclose(int fd);
 long myos_fread(void *buffer, size_t size, size_t count, long fd);
 long myos_fseek(long fd, long offset, long whence);
 long myos_fstat(long fd, struct file_stat *filestat_out);
+void *myos_window_create(const char *title, long width, long height, long flags, long id);

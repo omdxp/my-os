@@ -188,15 +188,9 @@ void kernel_main()
 	// graphics_draw_image(NULL, img, 0, 0);
 	// graphics_redraw_all();
 
-	struct window *win = window_create(screen_info, NULL, "MyOS Window", 50, 50, 400, 300, 0, -1);
-	if (win)
-		;
-
 	// enable interrupts
-	enable_interrupts();
-	print("Interrupts enabled\n");
-	while (1)
-		;
+	// enable_interrupts();
+	// print("Interrupts enabled\n");
 
 	// load program
 	struct process *process = 0;

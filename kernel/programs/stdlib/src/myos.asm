@@ -17,6 +17,7 @@ global myos_fread:function
 global myos_fseek:function
 global myos_fstat:function
 global myos_realloc:function
+global myos_window_create:function
 
 ; void print(const char* filename)
 print:
@@ -140,4 +141,16 @@ myos_realloc:
 	push qword rdi      ; variable old_ptr
 	int 0x80
 	add rsp, 16         ; clean up stack
+	ret
+
+; void *myos_window_create(const char* title, long width, long height, long flags, long id)
+myos_window_create:
+	mov rax, 16         ; command 16 window create
+	push qword r8       ; variable id
+	push qword rcx      ; variable flags
+	push qword rdx      ; variable height
+	push qword rsi      ; variable width
+	push qword rdi      ; variable title
+	int 0x80
+	add rsp, 40         ; clean up stack
 	ret

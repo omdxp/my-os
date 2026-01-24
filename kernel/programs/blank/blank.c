@@ -4,8 +4,25 @@
 #include "string.h"
 #include "file.h"
 
+struct window
+{
+	char title[64];
+	int width;
+	int height;
+};
+
 int main(int argc, char **argv)
 {
+	struct window *win = myos_window_create("Blank Program", 800, 600, 0, 0);
+	if (win)
+	{
+		printf("Created window titled: %s\n", win->title);
+	}
+	else
+	{
+		printf("Failed to create window\n");
+	}
+
 	int fd = fopen("@:/blank.elf", "r");
 	if (fd > 0)
 	{
