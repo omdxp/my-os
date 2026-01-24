@@ -2,8 +2,10 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "graphics.h"
 #include "config.h"
+
+struct graphics_info;
+struct framebuffer_pixel;
 
 #define FONT_IMAGE_DRAW_SUBTRACT_FROM_INDEX 32
 #define FONT_IMAGE_CHARACTER_WIDTH_PIXEL_SIZE 9

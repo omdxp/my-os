@@ -1,7 +1,13 @@
 #pragma once
 
-#include "font.h"
-#include "graphics.h"
+#include "graphics/graphics.h"
+#include "memory/heap/kheap.h"
+#include "graphics/image/image.h"
+#include "lib/vector.h"
+#include "memory/memory.h"
+#include "graphics/font.h"
+#include "status.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 

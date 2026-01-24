@@ -1,5 +1,5 @@
 #include "font.h"
-#include "graphics.h"
+#include "graphics/graphics.h"
 #include "memory/heap/kheap.h"
 #include "memory/memory.h"
 #include "lib/vector.h"

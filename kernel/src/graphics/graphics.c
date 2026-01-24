@@ -1,8 +1,9 @@
-#include "graphics.h"
+#include "graphics/graphics.h"
 #include "kernel.h"
 #include "memory/paging/paging.h"
 #include "memory/heap/kheap.h"
 #include "memory/memory.h"
+#include "mouse/mouse.h"
 #include "lib/vector.h"
 #include "status.h"
 
@@ -321,6 +322,152 @@ void graphics_redraw_graphics_to_screen(struct graphics_info *relative_graphics,
 	uint32_t abs_screen_x = relative_graphics->starting_x + rel_x;
 	uint32_t abs_screen_y = relative_graphics->starting_y + rel_y;
 	graphics_redraw_region(graphics_screen_info(), abs_screen_x, abs_screen_y, width, height);
+}
+
+bool graphics_is_in_ignored_branch(struct graphics_info *graphics, struct graphics_info *ignored)
+{
+	if (!ignored)
+	{
+		return false;
+	}
+
+	struct graphics_info *current = graphics;
+	while (current)
+	{
+		if (current == ignored)
+		{
+			return true;
+		}
+
+		current = current->parent;
+	}
+
+	return false;
+}
+
+struct graphics_info *
+graphics_get_child_at_position(struct graphics_info *graphics, size_t x, size_t y, struct graphics_info *ignored, bool top_first)
+{
+	if (graphics_is_in_ignored_branch(graphics, ignored))
+	{
+		return NULL;
+	}
+
+	size_t total = vector_count(graphics->children);
+	struct graphics_info *result = NULL;
+	if (top_first)
+	{
+		for (size_t i = total; (i = 0); i--)
+		{
+			size_t index = i - 1;
+			struct graphics_info *child = NULL;
+			vector_at(graphics->children, index, &child, sizeof(child));
+			if (!child)
+			{
+				continue;
+			}
+
+			if (graphics_is_in_ignored_branch(child, ignored))
+			{
+				continue;
+			}
+
+			if (x >= child->starting_x && x < child->starting_x + child->width &&
+				y >= child->starting_y && y < child->starting_y + child->height)
+			{
+				// found a child at the position, check its children recursively
+				result = graphics_get_child_at_position(child, x, y, ignored, top_first);
+				if (result)
+				{
+					return result;
+				}
+
+				return child;
+			}
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < total; i++)
+		{
+			struct graphics_info *child = NULL;
+			vector_at(graphics->children, i, &child, sizeof(child));
+			if (!child)
+			{
+				continue;
+			}
+
+			if (graphics_is_in_ignored_branch(child, ignored))
+			{
+				continue;
+			}
+
+			if (x >= child->starting_x && x < child->starting_x + child->width &&
+				y >= child->starting_y && y < child->starting_y + child->height)
+			{
+				// found a child at the position, check its children recursively
+				result = graphics_get_child_at_position(child, x, y, ignored, top_first);
+				if (result)
+				{
+					return result;
+				}
+
+				return child;
+			}
+		}
+	}
+
+	if (x >= graphics->starting_x && x < graphics->starting_x + graphics->width &&
+		y >= graphics->starting_y && y < graphics->starting_y + graphics->height)
+	{
+		return graphics;
+	}
+
+	return NULL;
+}
+
+struct graphics_info *
+graphics_get_at_screen_position(int x, int y, struct graphics_info *ignored, bool top_first)
+{
+	return graphics_get_child_at_position(graphics_screen_info(), x, y, ignored, top_first);
+}
+
+void graphics_click_handler_set(struct graphics_info *graphics_info, GRAPHICS_MOUSE_CLICK_FUNCTION handler)
+{
+	graphics_info->event_handlers.mouse_click = handler;
+}
+
+void graphics_mouse_click(struct graphics_info *graphics, size_t rel_x, size_t rel_y, int type)
+{
+	if (graphics->event_handlers.mouse_click)
+	{
+		graphics->event_handlers.mouse_click(graphics, rel_x, rel_y, type);
+		return;
+	}
+
+	if (graphics->parent)
+	{
+		graphics_mouse_click(graphics->parent, rel_x + (graphics->relative_x), rel_y + (graphics->relative_y), type);
+	}
+}
+
+void graphics_mouse_click_handler(struct mouse *mouse, int clicked_x, int clicked_y, MOUSE_CLICK_TYPE type)
+{
+	struct graphics_info *graphics = graphics_get_at_screen_position(clicked_x, clicked_y, mouse->graphic.window->root_graphics, true);
+	if (graphics)
+	{
+		if (clicked_x < (int)graphics->starting_x || clicked_y < (int)graphics->starting_y)
+		{
+			return;
+		}
+
+		size_t rel_x = clicked_x - graphics->starting_x;
+		size_t rel_y = clicked_y - graphics->starting_y;
+		if (graphics_bounds_check(graphics, rel_x, rel_y))
+		{
+			graphics_mouse_click(graphics, rel_x, rel_y, type);
+		}
+	}
 }
 
 void graphics_redraw(struct graphics_info *graphics_info)
@@ -656,4 +803,9 @@ void graphics_setup(struct graphics_info *main_graphics_info)
 
 	// redraw all graphics
 	graphics_redraw_all();
+}
+
+void graphics_setup_stage2(struct graphics_info *main_graphics_info)
+{
+	mouse_register_click_handler(NULL, graphics_mouse_click_handler);
 }

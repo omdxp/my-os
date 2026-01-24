@@ -1,10 +1,4 @@
 #include "terminal.h"
-#include "memory/heap/kheap.h"
-#include "graphics/image/image.h"
-#include "lib/vector.h"
-#include "memory/memory.h"
-#include "status.h"
-#include <stdbool.h>
 
 struct vector *terminal_vector = NULL;
 

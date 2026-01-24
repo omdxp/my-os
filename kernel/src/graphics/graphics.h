@@ -96,3 +96,8 @@ void graphics_paste_pixels_to_pixels(struct graphics_info *graphics_info_in,
 									 int flags);
 void graphics_info_free(struct graphics_info *graphics_info);
 void graphics_info_recalculate(struct graphics_info *graphics_info);
+struct graphics_info *
+graphics_get_at_screen_position(int x, int y, struct graphics_info *ignored, bool top_first);
+struct graphics_info *
+graphics_get_child_at_position(struct graphics_info *graphics, size_t x, size_t y, struct graphics_info *ignored, bool top_first);
+void graphics_click_handler_set(struct graphics_info *graphics_info, GRAPHICS_MOUSE_CLICK_FUNCTION handler);
