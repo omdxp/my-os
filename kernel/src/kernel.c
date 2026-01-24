@@ -125,6 +125,9 @@ void kernel_main()
 	// load static mouse drivers
 	mouse_system_load_static_drivers();
 
+	// initlialize graphics stage 2
+	graphics_setup_stage2(&default_graphics_info);
+
 	// initialize window system stage 2
 	window_system_initialize_stage2();
 

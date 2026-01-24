@@ -242,7 +242,7 @@ void graphics_redraw_region(struct graphics_info *graphics_info, uint32_t local_
 
 	if (local_x + width > graphics_info->width)
 	{
-		return;
+		width = graphics_info->width - local_x;
 	}
 
 	if (local_y + height > graphics_info->height)
@@ -282,7 +282,7 @@ void graphics_redraw_region(struct graphics_info *graphics_info, uint32_t local_
 		// compute intersection
 		uint32_t inter_left = MAX(region_abs_left, child_abs_left);
 		uint32_t inter_top = MAX(region_abs_top, child_abs_top);
-		uint32_t inter_right = MAX(region_abs_right, child_abs_right);
+		uint32_t inter_right = MIN(region_abs_right, child_abs_right);
 		uint32_t inter_bottom = MIN(region_abs_bottom, child_abs_bottom);
 
 		if (inter_right > inter_left && inter_bottom > inter_top)
