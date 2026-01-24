@@ -215,12 +215,7 @@ void graphics_redraw_children(struct graphics_info *graphics_info)
 	for (size_t i = 0; i < total_children; i++)
 	{
 		struct graphics_info *child = NULL;
-		int res = vector_at(graphics_info->children, i, &child, sizeof(child));
-		if (res < 0)
-		{
-			break;
-		}
-
+		vector_at(graphics_info->children, i, &child, sizeof(child));
 		if (child)
 		{
 			graphics_redraw(child);
@@ -267,10 +262,10 @@ void graphics_redraw_region(struct graphics_info *graphics_info, uint32_t local_
 	for (size_t i = 0; i < total_children; i++)
 	{
 		struct graphics_info *child = NULL;
-		int res = vector_at(graphics_info->children, i, &child, sizeof(child));
-		if (res < 0)
+		vector_at(graphics_info->children, i, &child, sizeof(child));
+		if (!child)
 		{
-			break;
+			continue;
 		}
 
 		// child absolute coordinates
@@ -373,7 +368,7 @@ graphics_get_child_at_position(struct graphics_info *graphics, size_t x, size_t 
 	struct graphics_info *result = NULL;
 	if (top_first)
 	{
-		for (size_t i = total; (i = 0); i--)
+		for (size_t i = total; i > 0; i--)
 		{
 			size_t index = i - 1;
 			struct graphics_info *child = NULL;

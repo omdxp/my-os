@@ -44,7 +44,7 @@ struct window *window_get_at_position(size_t abs_x, size_t abs_y, struct window 
 	for (size_t i = 0; i < total_windows; i++)
 	{
 		struct window *win = NULL;
-		vector_at(windows_vector, total_windows - i - 1, &win, sizeof(win));
+		vector_at(windows_vector, i, &win, sizeof(win));
 		if (win && win != ignored)
 		{
 			size_t whole_win_width = win->root_graphics->width;
@@ -656,7 +656,7 @@ window_create(struct graphics_info *graphics_info, struct font *font, const char
 	}
 
 	struct framebuffer_pixel pixel_color = {0};
-	pixel_color.red = 0xc0;
+	pixel_color.red = 0xff;
 	window->terminal = terminal_create(window_graphics_info, 0, 0, width, height, font, pixel_color, TERMINAL_FLAG_BACKSPACE_ALLOWED);
 	if (!window->terminal)
 	{
