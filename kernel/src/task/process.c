@@ -1386,3 +1386,75 @@ int process_close_file_handles(struct process *process)
 	process->file_handles = NULL;
 	return res;
 }
+
+int process_map_into_userspace(struct process *process, void *phys_ptr, size_t t_size, int map_flags, void **virt_addr_out)
+{
+	int res = 0;
+	void *virt_ptr = NULL;
+	void *end_phys_addr = phys_ptr + t_size;
+	if (!paging_is_aligned(phys_ptr) || !paging_is_aligned(end_phys_addr))
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	virt_ptr = process_malloc(process, t_size);
+	if (!virt_ptr)
+	{
+		res = -ENOMEM;
+		goto out;
+	}
+
+	map_flags |= PAGING_ACCESS_FROM_ALL;
+	res = paging_map_range(process->paging_desc, virt_ptr, phys_ptr, t_size, map_flags);
+	if (res < 0)
+	{
+		goto out;
+	}
+
+	*virt_addr_out = virt_ptr;
+
+out:
+	return res;
+}
+
+int process_map_graphics_framebuffer_pixels_into_userspace(struct process *process, struct graphics_info *graphics_in, struct framebuffer_pixel **virt_addr_out, size_t *size_out)
+{
+	int res = 0;
+	struct framebuffer_pixel *pixels = NULL;
+	size_t graphics_width = 0;
+	size_t graphics_height = 0;
+	if (!graphics_in)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	pixels = graphics_in->pixels;
+	if (!pixels)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	graphics_width = graphics_in->width;
+	graphics_height = graphics_in->height;
+
+	size_t memory_size = paging_align_value_to_upper_page(sizeof(struct framebuffer_pixel) * graphics_width * graphics_height);
+
+	int map_flags = PAGING_IS_PRESENT | PAGING_IS_WRITEABLE | PAGING_ACCESS_FROM_ALL | PAGING_CACHE_DISABLED;
+
+	res = process_map_into_userspace(process, pixels, memory_size, map_flags, (void **)virt_addr_out);
+	if (res < 0)
+	{
+		goto out;
+	}
+
+	if (size_out)
+	{
+		*size_out = memory_size;
+	}
+
+out:
+	return res;
+}

@@ -76,3 +76,4 @@ void *myos_window_create(const char *title, long width, long height, long flags,
 void myos_divert_stdout_to_window(struct window *win);
 int myos_process_get_window_event(struct window_event *event);
 void *myos_window_get_graphics(struct window *win);
+void *myos_graphics_get_pixels(void *graphics);

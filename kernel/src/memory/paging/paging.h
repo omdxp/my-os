@@ -76,3 +76,4 @@ void paging_load_directory(uintptr_t *directory);
 void paging_invalidate_tlb_entry(uintptr_t addr);
 void paging_switch(struct paging_desc *desc);
 void paging_desc_free(struct paging_desc *desc);
+uint64_t paging_align_value_to_upper_page(uint64_t val_in);
