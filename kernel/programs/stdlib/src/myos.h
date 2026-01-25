@@ -75,3 +75,4 @@ long myos_fstat(long fd, struct file_stat *filestat_out);
 void *myos_window_create(const char *title, long width, long height, long flags, long id);
 void myos_divert_stdout_to_window(struct window *win);
 int myos_process_get_window_event(struct window_event *event);
+void *myos_window_get_graphics(struct window *win);

@@ -20,6 +20,7 @@ global myos_realloc:function
 global myos_window_create:function
 global myos_divert_stdout_to_window:function
 global myos_process_get_window_event:function
+global myos_window_get_graphics:function
 
 ; void print(const char* filename)
 print:
@@ -169,6 +170,14 @@ myos_divert_stdout_to_window:
 myos_process_get_window_event:
 	mov rax, 18         ; command 18 get window event
 	push qword rdi      ; variable event
+	int 0x80
+	add rsp, 8          ; clean up stack
+	ret
+
+; void* myos_window_get_graphics(struct window* win)
+myos_window_get_graphics:
+	mov rax, 19         ; command 19 window graphics get
+	push qword rdi      ; variable win
 	int 0x80
 	add rsp, 8          ; clean up stack
 	ret
