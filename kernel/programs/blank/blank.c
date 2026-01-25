@@ -26,41 +26,24 @@ int main(int argc, char **argv)
 	// divert stdout to the created window
 	myos_divert_stdout_to_window(win);
 
-	int fd = fopen("@:/blank.elf", "r");
-	if (fd > 0)
-	{
-		printf("Successfully opened file blank.elf with fd %d\n", fd);
-		char buffer[128] = {0};
-		int bytes_read = fread(buffer, 1, sizeof(buffer) - 1, fd);
-		if (bytes_read > 0)
-		{
-			buffer[bytes_read] = '\0'; // null-terminate the string
-			printf("Read %d bytes from blank.elf:\n%s\n", bytes_read, buffer);
-		}
-
-		int seek_result = fseek(fd, 0, 0); // SEEK_SET
-		if (seek_result == 0)
-		{
-			printf("Successfully seeked to the beginning of blank.elf\n");
-		}
-
-		struct file_stat stat = {0};
-		int stat_result = fstat(fd, &stat);
-		if (stat_result == 0)
-		{
-			printf("File blank.elf size: %u bytes\n", stat.filesize);
-		}
-	}
-	else
-	{
-		printf("Failed to open file blank.elf\n");
-	}
-
-	fclose(fd);
-	printf("Closed file blank.elf\n");
-
 	while (1)
-		;
+	{
+		struct window_event window_event = {0};
+		int res = myos_process_get_window_event(&window_event);
+		if (res >= 0)
+		{
+			printf("Received window event of type: %d from window ID: %d\n", window_event.type, window_event.win_id);
+			switch (window_event.type)
+			{
+			case 4: // click event
+				printf("Mouse click at position (%d, %d)\n", window_event.data.click.x, window_event.data.click.y);
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
 
 	return 0;
 }

@@ -6,6 +6,41 @@
 struct file_stat;
 struct window;
 
+// temporary structure for window events until implementing a GUI sdk
+struct window_event
+{
+	int type;	  // type of the event
+	int win_id;	  // id of the window generating the event
+	void *window; // pointer to the window generating the event
+
+	union
+	{
+		struct
+		{
+			// no additional data for close event
+		} focus; // focus event data
+
+		// positions are relative to the window body
+		struct
+		{
+			int x; // x position of the mouse click
+			int y; // y position of the mouse click
+		} move;	   // mouse move event data
+
+		// positions are relative to the window body
+		struct
+		{
+			int x; // x position of the mouse click
+			int y; // y position of the mouse click
+		} click;   // mouse click event data
+
+		struct
+		{
+			char key; // key that was pressed
+		} keypress;	  // keypress event data
+	} data;			  // event-specific data
+};
+
 struct command_argument
 {
 	char argument[512];
@@ -39,3 +74,4 @@ long myos_fseek(long fd, long offset, long whence);
 long myos_fstat(long fd, struct file_stat *filestat_out);
 void *myos_window_create(const char *title, long width, long height, long flags, long id);
 void myos_divert_stdout_to_window(struct window *win);
+int myos_process_get_window_event(struct window_event *event);
