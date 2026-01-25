@@ -22,6 +22,7 @@ global myos_divert_stdout_to_window:function
 global myos_process_get_window_event:function
 global myos_window_get_graphics:function
 global myos_graphics_get_pixels:function
+global myos_window_redraw:function
 
 ; void print(const char* filename)
 print:
@@ -187,6 +188,14 @@ myos_window_get_graphics:
 myos_graphics_get_pixels:
 	mov rax, 20         ; command 20 graphics pixels buffer get
 	push qword rdi      ; variable graphics
+	int 0x80
+	add rsp, 8          ; clean up stack
+	ret
+
+; void myos_window_redraw(struct window* win)
+myos_window_redraw:
+	mov rax, 21         ; command 21 window redraw
+	push qword rdi      ; variable win
 	int 0x80
 	add rsp, 8          ; clean up stack
 	ret

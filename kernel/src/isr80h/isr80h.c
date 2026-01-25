@@ -31,4 +31,5 @@ void isr80h_register_commands()
 	isr80h_register_command(SYSTEM_COMMAND18_GET_WINDOW_EVENT, isr80h_command18_get_window_event);
 	isr80h_register_command(SYSTEM_COMMAND19_WINDOW_GRAPHICS_GET, isr80h_command19_window_graphics_get);
 	isr80h_register_command(SYSTEM_COMMAND20_GRAPHICS_PIXELS_BUFFER_GET, isr80h_command20_graphics_pixels_buffer_get);
+	isr80h_register_command(SYSTEM_COMMAND21_WINDOW_REDRAW, isr80h_command21_window_redraw);
 }

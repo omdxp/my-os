@@ -130,3 +130,21 @@ void *isr80h_command19_window_graphics_get(struct interrupt_frame *frame)
 	// userland owns this pointer and must free it when done
 	return (void *)userland_graphics;
 }
+
+void *isr80h_command21_window_redraw(struct interrupt_frame *frame)
+{
+	void *user_win_ptr = task_get_stack_item(task_current(), 0);
+	if (!user_win_ptr)
+	{
+		return NULL;
+	}
+
+	struct window *kern_window = isr80h_window_from_process_window_virt(user_win_ptr);
+	if (!kern_window)
+	{
+		return NULL;
+	}
+
+	window_redraw(kern_window);
+	return NULL;
+}
