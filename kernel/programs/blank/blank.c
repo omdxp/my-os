@@ -23,6 +23,9 @@ int main(int argc, char **argv)
 		printf("Failed to create window\n");
 	}
 
+	// divert stdout to the created window
+	myos_divert_stdout_to_window(win);
+
 	int fd = fopen("@:/blank.elf", "r");
 	if (fd > 0)
 	{

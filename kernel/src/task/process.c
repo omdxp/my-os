@@ -95,6 +95,31 @@ struct process_window *process_window_get_from_user_window(struct process *proce
 	return NULL;
 }
 
+void process_print_char(struct process *process, char c)
+{
+	struct process_window *sysout_win = process->sysout_win;
+	struct terminal *win_term = window_terminal(sysout_win->kernel_win);
+	if (win_term)
+	{
+		terminal_write(win_term, c);
+	}
+}
+
+void process_print(struct process *process, const char *str)
+{
+	struct process_window *sysout_win = process->sysout_win;
+	struct terminal *win_term = window_terminal(sysout_win->kernel_win);
+	if (win_term)
+	{
+		terminal_print(win_term, str);
+	}
+}
+
+void process_set_sysout_window(struct process *process, struct process_window *proc_win)
+{
+	process->sysout_win = proc_win;
+}
+
 void process_close_windows(struct process *process)
 {
 	size_t total_windows = vector_count(process->windows);

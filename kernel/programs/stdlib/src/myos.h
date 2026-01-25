@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 struct file_stat;
+struct window;
 
 struct command_argument
 {
@@ -37,3 +38,4 @@ long myos_fread(void *buffer, size_t size, size_t count, long fd);
 long myos_fseek(long fd, long offset, long whence);
 long myos_fstat(long fd, struct file_stat *filestat_out);
 void *myos_window_create(const char *title, long width, long height, long flags, long id);
+void myos_divert_stdout_to_window(struct window *win);

@@ -26,4 +26,5 @@ void isr80h_register_commands()
 	isr80h_register_command(SYSTEM_COMMAND14_FSTAT, isr80h_command14_fstat);
 	isr80h_register_command(SYSTEM_COMMAND15_REALLOC, isr80h_command15_realloc);
 	isr80h_register_command(SYSTEM_COMMAND16_WINDOW_CREATE, isr80h_command16_window_create);
+	isr80h_register_command(SYSTEM_COMMAND17_SYSOUT_TO_WINDOW, isr80h_command17_sysout_to_window);
 }

@@ -18,6 +18,7 @@ global myos_fseek:function
 global myos_fstat:function
 global myos_realloc:function
 global myos_window_create:function
+global myos_divert_stdout_to_window:function
 
 ; void print(const char* filename)
 print:
@@ -153,4 +154,12 @@ myos_window_create:
 	push qword rdi      ; variable title
 	int 0x80
 	add rsp, 40         ; clean up stack
+	ret
+
+; void myos_divert_stdout_to_window(struct window* win)
+myos_divert_stdout_to_window:
+	mov rax, 17         ; command 17 divert stdout to window
+	push qword rdi      ; variable win
+	int 0x80
+	add rsp, 8          ; clean up stack
 	ret
