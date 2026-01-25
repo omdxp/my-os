@@ -9,10 +9,12 @@
 
 #define PROCESS_FILETYPE_ELF 0
 #define PROCESS_FILETYPE_BIN 1
+#define PROCESS_MAX_WINDOW_RECORDED 1000
 typedef unsigned char PROCESS_FILETYPE;
 
 struct window;
 struct graphics_info;
+struct window_event;
 
 struct command_argument
 {
@@ -118,6 +120,14 @@ struct process
 	// vector of struct process_window*
 	struct vector *windows;
 
+	// window events
+	struct
+	{
+		struct vector *events; // vector of struct window_event
+		size_t index;		   // current index in the events vector
+		size_t total_unpopped; // total unpopped events
+	} window_events;
+
 	// process arguments
 	struct process_arguments arguments;
 
@@ -154,3 +164,6 @@ void process_close_windows(struct process *process);
 void process_print(struct process *process, const char *str);
 void process_print_char(struct process *process, char c);
 void process_set_sysout_window(struct process *process, struct process_window *proc_win);
+int process_push_window_event(struct process *process, struct window_event *event);
+int process_pop_window_event(struct process *process, struct window_event *event_out);
+void process_windows_closed(struct process *process, struct process_window *proc_win);

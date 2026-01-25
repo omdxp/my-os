@@ -37,6 +37,9 @@ static void process_init(struct process *process)
 	process->file_handles = vector_new(sizeof(struct process_file_handle *), 4, 0);
 	process->kernel_userland_ptrs_vector = vector_new(sizeof(struct userland_ptr *), 4, 0);
 	process->windows = vector_new(sizeof(struct process_window *), 4, 0);
+	process->window_events.events = vector_new(sizeof(struct window_event), 100, 0);
+
+	vector_grow(process->window_events.events, PROCESS_MAX_WINDOW_RECORDED);
 }
 
 struct process *process_current()
@@ -93,6 +96,176 @@ struct process_window *process_window_get_from_user_window(struct process *proce
 	}
 
 	return NULL;
+}
+
+int process_window_event_get_relative_window_body_coords(struct window_event *event, int *out_x, int *out_y)
+{
+	int res = 0;
+	int rel_body_x = event->data.click.x - event->window->graphics->relative_x;
+	int rel_body_y = event->data.click.y - event->window->graphics->relative_y;
+	if (rel_body_x < 0 || rel_body_y < 0 ||
+		rel_body_x > event->window->graphics->width ||
+		rel_body_y > event->window->graphics->height)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	*out_x = rel_body_x;
+	*out_y = rel_body_y;
+
+out:
+	return res;
+}
+
+int process_window_event_modify_for_userspace_mouse_click(struct window_event *event)
+{
+	int res = 0;
+	res = process_window_event_get_relative_window_body_coords(event, &event->data.click.x, &event->data.click.y);
+	return res;
+}
+
+int process_window_event_modify_for_userspace_mouse_move(struct window_event *event)
+{
+	int res = 0;
+	res = process_window_event_get_relative_window_body_coords(event, &event->data.move.x, &event->data.move.y);
+	return res;
+}
+
+int process_window_event_modify_for_userspace(struct window_event *event)
+{
+	int res = 0;
+	switch (event->type)
+	{
+	case WINDOW_EVENT_TYPE_MOUSE_CLICK:
+		res = process_window_event_modify_for_userspace_mouse_click(event);
+		break;
+
+	case WINDOW_EVENT_TYPE_MOUSE_MOVE:
+		res = process_window_event_modify_for_userspace_mouse_move(event);
+		break;
+
+	default:
+		break;
+	}
+
+	return res;
+}
+
+void process_current_set(struct process *process)
+{
+	current_process = process;
+}
+
+int process_window_event_handler_event_focus(struct window *window, struct process *process, struct window_event *event)
+{
+	process_current_set(process);
+	return 0;
+}
+
+struct process_window *process_window_get_from_kernel_window(struct process *process, struct window *kernel_window)
+{
+	size_t total_windows = vector_count(process->windows);
+	for (size_t i = 0; i < total_windows; i++)
+	{
+		struct process_window *proc_win = NULL;
+		vector_at(process->windows, i, &proc_win, sizeof(proc_win));
+		if (proc_win && proc_win->kernel_win == kernel_window)
+		{
+			return proc_win;
+		}
+	}
+
+	return NULL;
+}
+
+int process_window_event_handler_event_close(struct window *window, struct process *process, struct window_event *event)
+{
+	int res = 0;
+	struct process_window *proc_win = NULL;
+	proc_win = process_window_get_from_kernel_window(process, window);
+	if (proc_win)
+	{
+		process_windows_closed(process, proc_win);
+	}
+
+	return res;
+}
+
+int process_window_event_handler_kernel_handle_event(struct window *window, struct process *process, struct window_event *event)
+{
+	int res = 0;
+	switch (event->type)
+	{
+	case WINDOW_EVENT_TYPE_FOCUS:
+		res = process_window_event_handler_event_focus(window, process, event);
+		break;
+
+	case WINDOW_EVENT_TYPE_WINDOW_CLOSE:
+		res = process_window_event_handler_event_close(window, process, event);
+		break;
+
+	default:
+		break;
+	}
+
+	return res;
+}
+
+int process_window_event_handler(struct window *window, struct window_event *event)
+{
+	int res = 0;
+	struct process *process = process_get_from_kernel_window(window);
+	if (!process)
+	{
+		return 0;
+	}
+
+	// move events are disabled for now
+	if (event->type != WINDOW_EVENT_TYPE_MOUSE_MOVE)
+	{
+		struct window_event event_copy = *event;
+		res = process_window_event_modify_for_userspace(&event_copy);
+		if (res >= 0)
+		{
+			process_push_window_event(process, &event_copy);
+		}
+
+		res = 0;
+	}
+
+	res = process_window_event_handler_kernel_handle_event(window, process, event);
+	return res;
+}
+
+int process_pop_window_event(struct process *process, struct window_event *event_out)
+{
+	int res = -EOUTOFRANGE;
+	if (!process || !event_out)
+	{
+		return -EINVARG;
+		goto out;
+	}
+
+	if (process->window_events.total_unpopped > 0)
+	{
+		vector_at(process->window_events.events, 0, event_out, sizeof(struct window_event));
+		process->window_events.total_unpopped--;
+		res = 0;
+	}
+
+out:
+	return res;
+}
+
+int process_push_window_event(struct process *process, struct window_event *event)
+{
+	int element_index = process->window_events.index % PROCESS_MAX_WINDOW_RECORDED;
+	struct window_event event_copy = *event;
+	event_copy.window = NULL; // do not store kernel pointer in userland event log
+	vector_overwrite(process->window_events.events, element_index, &event_copy, sizeof(struct window_event));
+	process->window_events.total_unpopped++;
+	return 0;
 }
 
 void process_print_char(struct process *process, char c)
@@ -180,7 +353,8 @@ struct process_window *process_window_create(struct process *process, char *titl
 	proc_win->user_win->height = height;
 	strncpy(proc_win->user_win->title, title, sizeof(proc_win->user_win->title));
 
-	// TODO: register window event handlers
+	// register window event handlers
+	window_event_handler_register(proc_win->kernel_win, process_window_event_handler);
 
 	vector_push(process->windows, &proc_win);
 
@@ -512,7 +686,9 @@ int process_free_program_data(struct process *process)
 
 void process_windows_closed(struct process *process, struct process_window *proc_win)
 {
-	// TODO: clean up and close the window
+	vector_pop_element(process->windows, &proc_win, sizeof(proc_win));
+	process_free(process, proc_win->user_win);
+	kfree(proc_win);
 }
 
 int process_free_process(struct process *process)
@@ -530,6 +706,10 @@ int process_free_process(struct process *process)
 	// free userland pointers vector
 	vector_free(process->kernel_userland_ptrs_vector);
 	process->kernel_userland_ptrs_vector = NULL;
+
+	// free window events vector
+	vector_free(process->window_events.events);
+	process->window_events.events = NULL;
 
 	if (process->stack)
 	{

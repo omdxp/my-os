@@ -60,6 +60,40 @@ struct window_event
 	} data;			  // event-specific data
 };
 
+struct window_event_userland
+{
+	int type;			   // type of the event
+	int win_id;			   // id of the window generating the event
+	struct window *window; // pointer to the window generating the event
+
+	union
+	{
+		struct
+		{
+			// no additional data for close event
+		} focus; // focus event data
+
+		// positions are relative to the window body
+		struct
+		{
+			int x; // x position of the mouse click
+			int y; // y position of the mouse click
+		} move;	   // mouse move event data
+
+		// positions are relative to the window body
+		struct
+		{
+			int x; // x position of the mouse click
+			int y; // y position of the mouse click
+		} click;   // mouse click event data
+
+		struct
+		{
+			char key; // key that was pressed
+		} keypress;	  // keypress event data
+	} data;			  // event-specific data
+};
+
 typedef int (*WINDOW_EVENT_HANDLER)(struct window *window, struct window_event *event);
 
 enum
@@ -131,3 +165,4 @@ bool window_owns_graphics(struct window *window, struct graphics_info *graphics)
 void window_title_set(struct window *window, const char *new_title);
 void window_event_push(struct window *window, struct window_event *event);
 void window_close(struct window *window);
+void window_event_to_userland(struct window_event *kernel_win_event_in, struct window_event_userland *userland_win_event_out);

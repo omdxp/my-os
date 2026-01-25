@@ -98,3 +98,11 @@ size_t vector_count(struct vector *vec);
  * @return 0 on success, negative on error
  */
 int vector_pop_element(struct vector *vec, void *mem_val, size_t size);
+
+/**
+ * Grows the vector by the given number of elements
+ * @param vec The vector
+ * @param additional_elements Number of elements to grow by
+ * @return 0 on success, negative on error
+ */
+int vector_grow(struct vector *vec, size_t additional_elements);

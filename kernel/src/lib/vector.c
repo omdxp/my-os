@@ -269,3 +269,18 @@ void vector_free(struct vector *vec)
     }
     kfree(vec);
 }
+
+int vector_grow(struct vector *vec, size_t additional_elements)
+{
+    int res = 0;
+    res = vector_resize(vec, additional_elements);
+    if (res < 0)
+    {
+        goto out;
+    }
+
+    vec->t_elems += additional_elements;
+
+out:
+    return res;
+}

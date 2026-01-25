@@ -735,3 +735,14 @@ out:
 
 	return window;
 }
+
+void window_event_to_userland(struct window_event *kernel_win_event_in, struct window_event_userland *userland_win_event_out)
+{
+	userland_win_event_out->type = kernel_win_event_in->type;
+	if (sizeof(userland_win_event_out->data) != sizeof(kernel_win_event_in->data))
+	{
+		panic("window_event_to_userland: size mismatch between kernel and userland window event data");
+	}
+
+	memcpy(&userland_win_event_out->data, &kernel_win_event_in->data, sizeof(userland_win_event_out->data));
+}
