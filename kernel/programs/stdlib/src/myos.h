@@ -79,3 +79,4 @@ void *myos_window_get_graphics(struct window *win);
 void *myos_graphics_get_pixels(void *graphics);
 void myos_window_redraw(struct window *win);
 void *myos_graphics_create(size_t x, size_t y, size_t width, size_t height, void *parent_graphics);
+void myos_window_redraw_region(long rel_x, long rel_y, long rel_width, long rel_height, struct window *win);

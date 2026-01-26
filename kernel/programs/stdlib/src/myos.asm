@@ -24,6 +24,7 @@ global myos_window_get_graphics:function
 global myos_graphics_get_pixels:function
 global myos_window_redraw:function
 global myos_graphics_create:function
+global myos_window_redraw_region:function
 
 ; void print(const char* filename)
 print:
@@ -209,6 +210,18 @@ myos_graphics_create:
 	push qword rdx	    ; variable width
 	push qword rcx	    ; variable height
 	push qword r8	    ; variable parent_graphics
+	int 0x80
+	add rsp, 40         ; clean up stack
+	ret
+
+; void myos_window_redraw_region(long rel_x, long rel_y, long rel_width, long rel_height, struct window* win)
+myos_window_redraw_region:
+	mov rax, 23         ; command 23 window redraw region
+	push qword r8	    ; variable win
+	push qword rcx	    ; variable rel_height
+	push qword rdx	    ; variable rel_width
+	push qword rsi	    ; variable rel_y
+	push qword rdi	    ; variable rel_x
 	int 0x80
 	add rsp, 40         ; clean up stack
 	ret

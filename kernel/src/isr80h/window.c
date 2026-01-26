@@ -148,3 +148,25 @@ void *isr80h_command21_window_redraw(struct interrupt_frame *frame)
 	window_redraw(kern_window);
 	return NULL;
 }
+
+void *isr80h_command23_window_redraw_region(struct interrupt_frame *frame)
+{
+	long rect_x = (long)(uintptr_t)task_get_stack_item(task_current(), 0);
+	long rect_y = (long)(uintptr_t)task_get_stack_item(task_current(), 1);
+	long rect_width = (long)(uintptr_t)task_get_stack_item(task_current(), 2);
+	long rect_height = (long)(uintptr_t)task_get_stack_item(task_current(), 3);
+	void *user_win_ptr = task_get_stack_item(task_current(), 4);
+	if (!user_win_ptr)
+	{
+		return ERROR(-EINVARG);
+	}
+
+	struct window *kern_window = isr80h_window_from_process_window_virt(user_win_ptr);
+	if (!kern_window)
+	{
+		return ERROR(-EINVARG);
+	}
+
+	window_redraw_body_region(kern_window, rect_x, rect_y, rect_width, rect_height);
+	return NULL;
+}
