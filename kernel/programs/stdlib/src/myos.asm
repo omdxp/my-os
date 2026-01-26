@@ -23,6 +23,7 @@ global myos_process_get_window_event:function
 global myos_window_get_graphics:function
 global myos_graphics_get_pixels:function
 global myos_window_redraw:function
+global myos_graphics_create:function
 
 ; void print(const char* filename)
 print:
@@ -198,4 +199,16 @@ myos_window_redraw:
 	push qword rdi      ; variable win
 	int 0x80
 	add rsp, 8          ; clean up stack
+	ret
+
+; void* myos_graphics_create(size_t x, size_t y, size_t width, size_t height, void *parent_graphics)
+myos_graphics_create:
+	mov rax, 22         ; command 22 graphics create
+	push qword rdi	    ; variable x
+	push qword rsi	    ; variable y
+	push qword rdx	    ; variable width
+	push qword rcx	    ; variable height
+	push qword r8	    ; variable parent_graphics
+	int 0x80
+	add rsp, 40         ; clean up stack
 	ret

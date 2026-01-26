@@ -63,3 +63,55 @@ void *isr80h_command20_graphics_pixels_buffer_get(struct interrupt_frame *frame)
 
 	return graphics_pixels_virt_out;
 }
+
+void *isr80h_command22_graphics_create(struct interrupt_frame *frame)
+{
+	size_t x = 0;
+	size_t y = 0;
+	size_t width = 0;
+	size_t height = 0;
+
+	x = (size_t)task_get_stack_item(task_current(), 4);
+	y = (size_t)task_get_stack_item(task_current(), 3);
+	width = (size_t)task_get_stack_item(task_current(), 2);
+	height = (size_t)task_get_stack_item(task_current(), 1);
+
+	struct userland_graphics *userland_graphics_ptr = task_get_stack_item(task_current(), 0);
+	if (!userland_graphics_ptr)
+	{
+		return NULL;
+	}
+
+	userland_graphics_ptr = (struct userland_graphics *)task_virtual_addr_to_phys(task_current(), userland_graphics_ptr);
+	struct graphics_info *kernel_land_graphics_ptr = process_userland_pointer_kernel_ptr(task_current()->process, (struct userland_ptr *)userland_graphics_ptr->userland_ptr);
+	if (!kernel_land_graphics_ptr)
+	{
+		return NULL;
+	}
+
+	struct graphics_info *child_graphics = graphics_info_create_relative(kernel_land_graphics_ptr, x, y, width, height, 0);
+	if (!child_graphics)
+	{
+		return NULL;
+	}
+
+	struct userland_ptr *userland_child_graphics = process_userland_pointer_create(task_current()->process, child_graphics);
+	if (!userland_child_graphics)
+	{
+		return NULL;
+	}
+
+	struct userland_graphics *userland_child_graphics_metadata = process_malloc(task_current()->process, sizeof(struct userland_graphics));
+	if (!userland_child_graphics_metadata)
+	{
+		return NULL;
+	}
+
+	userland_child_graphics_metadata->width = child_graphics->width;
+	userland_child_graphics_metadata->height = child_graphics->height;
+	userland_child_graphics_metadata->x = child_graphics->relative_x;
+	userland_child_graphics_metadata->y = child_graphics->relative_y;
+	userland_child_graphics_metadata->userland_ptr = userland_child_graphics;
+
+	return (void *)userland_child_graphics_metadata;
+}
