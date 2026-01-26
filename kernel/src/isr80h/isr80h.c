@@ -34,4 +34,5 @@ void isr80h_register_commands()
 	isr80h_register_command(SYSTEM_COMMAND21_WINDOW_REDRAW, isr80h_command21_window_redraw);
 	isr80h_register_command(SYSTEM_COMMAND22_GRAPHICS_CREATE, isr80h_command22_graphics_create);
 	isr80h_register_command(SYSTEM_COMMAND23_WINDOW_REDRAW_REGION, isr80h_command23_window_redraw_region);
+	isr80h_register_command(SYSTEM_COMMAND24_UPDATE_WINDOW, isr80h_command24_update_window);
 }

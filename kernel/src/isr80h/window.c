@@ -170,3 +170,53 @@ void *isr80h_command23_window_redraw_region(struct interrupt_frame *frame)
 	window_redraw_body_region(kern_window, rect_x, rect_y, rect_width, rect_height);
 	return NULL;
 }
+
+void *isr80h_command24_update_window_title(struct window *kern_window, struct interrupt_frame *frame)
+{
+	int res = 0;
+	const char *title_ptr = task_virtual_addr_to_phys(task_current(), task_get_stack_item(task_current(), 2));
+	if (!title_ptr)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	window_title_set(kern_window, title_ptr);
+
+out:
+	return (void *)(uintptr_t)res;
+}
+
+void *isr80h_command24_update_window(struct interrupt_frame *frame)
+{
+	int res = 0;
+	struct window *kern_window = NULL;
+	uint64_t update_type = (uint64_t)(uintptr_t)task_get_stack_item(task_current(), 0);
+	void *user_win_ptr = task_get_stack_item(task_current(), 1);
+	if (!user_win_ptr)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	kern_window = isr80h_window_from_process_window_virt(user_win_ptr);
+	if (!kern_window)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	switch (update_type)
+	{
+	case ISR80h_WINDOW_UPDATE_TITLE:
+		res = (int)(uintptr_t)isr80h_command24_update_window_title(kern_window, frame);
+		break;
+
+	default:
+		res = -EINVARG;
+		break;
+	};
+
+out:
+	return (void *)(uintptr_t)res;
+}

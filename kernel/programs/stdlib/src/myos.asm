@@ -25,6 +25,7 @@ global myos_graphics_get_pixels:function
 global myos_window_redraw:function
 global myos_graphics_create:function
 global myos_window_redraw_region:function
+global myos_window_title_set:function
 
 ; void print(const char* filename)
 print:
@@ -224,4 +225,14 @@ myos_window_redraw_region:
 	push qword rdi	    ; variable rel_x
 	int 0x80
 	add rsp, 40         ; clean up stack
+	ret
+
+; void myos_window_title_set(struct window* win, const char* title)
+myos_window_title_set:
+	mov rax, 24         ; command 24 update window
+	push qword rsi      ; variable title
+	push qword rdi      ; variable win
+	push qword 0        ; update type: title
+	int 0x80
+	add rsp, 16         ; clean up stack
 	ret
