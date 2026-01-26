@@ -13,6 +13,11 @@ int window_autoincrement_id = 100000; // auto-incrementing window ID counter
 
 size_t window_get_largest_z_index();
 int window_recalculate_z_indices();
+void window_keyboard_event_listener_on_event(struct keyboard *keyboard, struct keyboard_event *event);
+
+struct keyboard_listener window_keyboard_listener = {
+	.on_event = window_keyboard_event_listener_on_event,
+};
 
 int window_system_initialize()
 {
@@ -118,7 +123,7 @@ int window_system_initialize_stage2()
 {
 	mouse_register_move_handler(NULL, window_screen_mouse_move_handler);
 	mouse_register_click_handler(NULL, window_click_handler);
-	// TODO: implement keyboard event handlers for window management
+	keyboard_register_handler(NULL, window_keyboard_listener);
 	return 0;
 }
 
@@ -745,4 +750,42 @@ void window_event_to_userland(struct window_event *kernel_win_event_in, struct w
 	}
 
 	memcpy(&userland_win_event_out->data, &kernel_win_event_in->data, sizeof(userland_win_event_out->data));
+}
+
+void window_keyboard_event_listener_on_event_keypress(struct window *focused_win, struct keyboard *keyboard, struct keyboard_event *event)
+{
+	char key = event->data.keypress.key;
+
+	struct window_event win_event = {0};
+	win_event.type = WINDOW_EVENT_TYPE_KEYPRESS;
+	win_event.data.keypress.key = key;
+	window_event_push(focused_win, &win_event);
+}
+
+void window_keyboard_event_listener_on_event_capslock_change(struct window *focused_win, struct keyboard *keyboard, struct keyboard_event *event)
+{
+	// do nothing for now
+}
+
+void window_keyboard_event_listener_on_event(struct keyboard *keyboard, struct keyboard_event *event)
+{
+	struct window *focused_win = window_focused();
+	if (!focused_win)
+	{
+		return;
+	}
+
+	switch (event->type)
+	{
+	case KEYBOARD_EVENT_KEYPRESS:
+		window_keyboard_event_listener_on_event_keypress(focused_win, keyboard, event);
+		break;
+
+	case KEYBOARD_EVENT_CAPSLOCK_CHANGE:
+		window_keyboard_event_listener_on_event_capslock_change(focused_win, keyboard, event);
+		break;
+
+	default:
+		break;
+	}
 }
