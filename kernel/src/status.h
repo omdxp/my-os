@@ -13,3 +13,5 @@
 #define EOUTOFRANGE 10
 #define ENOTFOUND 11
 #define ETIMEOUT 12
+#define EINVAL 13
+#define ENOENT 14

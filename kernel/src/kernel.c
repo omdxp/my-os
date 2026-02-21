@@ -4,6 +4,7 @@
 #include "idt/idt.h"
 #include "io/io.h"
 #include "io/tsc.h"
+#include "io/pci.h"
 #include "memory/heap/kheap.h"
 #include "memory/heap/heap.h"
 #include "memory/memory.h"
@@ -101,6 +102,9 @@ void kernel_main()
 	// initialize the interrupt descriptor table
 	idt_init();
 
+	// initialize the PCI subsystem
+	pci_init();
+
 	// initialize file systems
 	fs_init();
 
@@ -182,6 +186,11 @@ void kernel_main()
 	// initialize keyboard
 	keyboard_init();
 	print("Keyboard initialized\n");
+
+	print("PCI devices found: ");
+	size_t pci_count = pci_device_count();
+	print(itoa(pci_count));
+	print("\n");
 
 	// load background image
 	// struct image *img = graphics_image_load("@:/backgrnd.bmp");
