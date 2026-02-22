@@ -49,6 +49,7 @@ int gpt_mount_partitions(struct gpt_partition_table_header *partition_header)
 
 	for (size_t i = 0; i < total_entries; i++)
 	{
+		struct disk *partition_virtual_disk = NULL;
 		char buffer[entry_size];
 		res = diskstreamer_read(streamer, buffer, sizeof(buffer));
 		if (res < 0)
@@ -64,13 +65,17 @@ int gpt_mount_partitions(struct gpt_partition_table_header *partition_header)
 			continue;
 		}
 
-		res = disk_create_new(MYOS_DISK_TYPE_PARTITION, entry->starting_lba, entry->ending_lba, gpt_primary_disk->sector_size, NULL);
+		res = disk_create_partition(gpt_primary_disk, entry->starting_lba, entry->ending_lba, &partition_virtual_disk);
 		if (res < 0)
 		{
 			goto out;
 		}
 
-		// partition mounted successfully
+		res = disk_filesystem_mount(partition_virtual_disk);
+		if (res < 0)
+		{
+			goto out;
+		}
 	}
 out:
 	return res;

@@ -6,67 +6,24 @@
 #include "lib/vector.h"
 #include "string/string.h"
 #include "memory/heap/kheap.h"
+#include "driver.h"
 
 struct vector *disk_vector = NULL;	 // vector of all disks in the system
 struct disk *disk = NULL;			 // pointer to the primary disk
 struct disk *primary_fs_disk = NULL; // the disk that contains the primary filesystem
 
-int disk_read_sector(int lba, int total, void *buf)
+struct disk *disk_hardware_disk(struct disk *disk)
 {
-	// wait until not busy
-	while (insb(0x1F7) & 0x80)
-		;
-
-	outb(0x1F6, 0xE0 | ((lba >> 24) & 0x0F));
-	outb(0x1F2, (unsigned char)total);
-	outb(0x1F3, (unsigned char)(lba & 0xff));
-	outb(0x1F4, (unsigned char)(lba >> 8) & 0xff);
-	outb(0x1F5, (unsigned char)((lba >> 16) & 0xff));
-	outb(0x1F7, 0x20);
-
-	unsigned short *ptr = (unsigned short *)buf;
-	for (int i = 0; i < total; i++)
-	{
-		// wait until not busy
-		while (insb(0x1F7) & 0x80)
-			;
-
-		// check for errors
-		char status = insb(0x1F7);
-		if (status & 0x01)
-		{
-			return -EIO;
-		}
-
-		// wait for buffer to be ready
-		while (!(insb(0x1F7) & 0x08))
-			;
-
-		// copy from hard disk to memory
-		for (int word = 0; word < 256; word++)
-		{
-			*ptr++ = insw(0x1F0);
-		}
-	}
-
-	return 0;
+	return disk->hardware_disk;
 }
 
-int disk_create_new(int type, int starting_lba, int ending_lba, size_t sector_size, struct disk **out_disk)
+int disk_create_partition(struct disk *disk, uint64_t starting_lba, uint64_t ending_lba, struct disk **partition_disk_out)
 {
-	int res = 0;
-	struct disk *disk = kzalloc(sizeof(struct disk));
-	if (!disk)
-	{
-		res = -ENOMEM;
-		goto out;
-	}
+	return disk_driver_mount_partition(disk->driver, disk, starting_lba, ending_lba, partition_disk_out);
+}
 
-	disk->type = type;
-	disk->sector_size = sector_size;
-	disk->starting_lba = starting_lba;
-	disk->ending_lba = ending_lba;
-	disk->id = vector_count(disk_vector);
+int disk_filesystem_mount(struct disk *disk)
+{
 	disk->filesystem = fs_resolve(disk);
 	if (disk->filesystem)
 	{
@@ -79,6 +36,51 @@ int disk_create_new(int type, int starting_lba, int ending_lba, size_t sector_si
 			primary_fs_disk = disk;
 		}
 	}
+
+	return 0;
+}
+
+int disk_create_new(struct disk_driver *driver, struct disk *hardware_disk, int type, int starting_lba, int ending_lba, size_t sector_size, void *driver_private_data, struct disk **out_disk)
+{
+	int res = 0;
+	struct disk *disk = kzalloc(sizeof(struct disk));
+	if (!disk)
+	{
+		res = -ENOMEM;
+		goto out;
+	}
+
+	if (hardware_disk && type == MYOS_DISK_TYPE_REAL)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	if (type == MYOS_DISK_TYPE_REAL)
+	{
+		hardware_disk = disk;
+	}
+
+	if (!hardware_disk)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	if (hardware_disk->type != MYOS_DISK_TYPE_REAL)
+	{
+		res = -EINVARG;
+		goto out;
+	}
+
+	disk->type = type;
+	disk->sector_size = sector_size;
+	disk->starting_lba = starting_lba;
+	disk->ending_lba = ending_lba;
+	disk->driver = driver;
+	disk->driver_private = driver_private_data;
+	disk->hardware_disk = hardware_disk;
+	disk->id = vector_count(disk_vector);
 
 	if (out_disk)
 	{
@@ -95,9 +97,23 @@ out:
 	return res;
 }
 
+int disk_mount_all()
+{
+	int res = 0;
+	res = disk_driver_mount_all();
+	return res;
+}
+
 int disk_search_and_init()
 {
 	int res = 0;
+	res = disk_driver_system_init();
+	if (res < 0)
+	{
+		res = -EIO;
+		goto out;
+	}
+
 	disk_vector = vector_new(sizeof(struct disk *), 4, 0);
 	if (!disk_vector)
 	{
@@ -105,7 +121,7 @@ int disk_search_and_init()
 		goto out;
 	}
 
-	res = disk_create_new(MYOS_DISK_TYPE_REAL, 0, 0, MYOS_SECTOR_SIZE, &disk);
+	res = disk_mount_all();
 	if (res < 0)
 	{
 		goto out;
@@ -150,5 +166,15 @@ int disk_read_block(struct disk *idisk, unsigned int lba, int total, void *buf)
 		}
 	}
 
-	return disk_read_sector(absolute_lba, total, buf);
+	if (!idisk->driver->functions.read)
+	{
+		return -EIO;
+	}
+
+	return idisk->driver->functions.read(idisk, absolute_lba, total, buf);
+}
+
+void *disk_private_data_driver(struct disk *disk)
+{
+	return disk->driver_private;
 }
