@@ -324,7 +324,7 @@ static int nvme_disk_driver_mount_for_device(struct disk_driver *driver, struct 
 	nvme_write64(priv, NVME_BASE_REGISTER_ASQ, (uint64_t)(uintptr_t)priv->submission_queue.ptr);
 	nvme_write64(priv, NVME_BASE_REGISTER_ACQ, (uint64_t)(uintptr_t)priv->completion_queue.ptr);
 
-	uint32_t cc = 0;
+	cc = 0;
 	cc |= (0u << 7);  // MPS=0 means 16 bytes per PRP entry, which is what we are using
 	cc |= (0u << 4);  // CSS=0 means the command set is the NVM command set
 	cc |= (6u << 16); // IOSQES submission queue entry size = 64 bytes
@@ -383,4 +383,205 @@ static int nvme_disk_driver_mount_for_device(struct disk_driver *driver, struct 
 	}
 
 	return 0;
+}
+
+static int nvme_io_submit_and_poll(struct disk *disk, uint8_t opcode, uint64_t lba, uint16_t num_blocks, void *buf)
+{
+	struct nvme_disk_driver_private *priv = disk_private_data_driver(disk);
+	const uint32_t page_size = 4096;
+	uint32_t bytes = (uint32_t)num_blocks * NVME_SECTOR_SIZE;
+	uintptr_t addr = (uintptr_t)buf;
+
+	// PRP calculation
+	uint32_t first_span = page_size - (uint32_t)(addr & (page_size - 1)); // bytes until the end of the first page
+	if (first_span >= bytes)
+	{
+		first_span = bytes; // if the data fits in the first page, adjust the first span
+	}
+
+	uint64_t prp1 = (uint64_t)addr;
+	uint64_t prp2 = 0;
+	if (bytes > first_span)
+	{
+		uint32_t remain = bytes - first_span;
+		if (remain > page_size)
+		{
+			remain = page_size; // we only support up to 2 PRPs, so if the remaining data exceeds one page, we limit it to one page
+		}
+
+		prp2 = (uint64_t)(addr + first_span);
+		uint32_t described = first_span + remain;
+		num_blocks = (uint16_t)((described + NVME_SECTOR_SIZE - 1) / NVME_SECTOR_SIZE); // recalculate num_blocks based on the actual described bytes
+	}
+
+	// build the command
+	struct nvme_submission_queue_entry cmd;
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.command = NVME_COMMAND_BITS_BUILD(opcode, 0, 0, 0);
+	cmd.nsid = priv->nsid;
+	cmd.data_ptr1 = (uint32_t)(prp1 & 0xFFFFFFFFu);
+	cmd.data_ptr2 = (uint32_t)(prp1 >> 32);
+	cmd.data_ptr3 = (uint32_t)(prp2 & 0xFFFFFFFFu);
+	cmd.data_ptr4 = (uint32_t)(prp2 >> 32);
+	cmd.command_cdw[0] = (uint32_t)(lba & 0xFFFFFFFFu);
+	cmd.command_cdw[1] = (uint32_t)(lba >> 32);
+	cmd.command_cdw[2] = (uint32_t)(num_blocks - 1u);
+
+	// post the command to the IO submission queue
+	struct nvme_submission_queue_entry *sqe = priv->io_submission_queue.ptr + priv->io_submission_queue.tail;
+	memcpy(sqe, &cmd, sizeof(cmd));
+	uint16_t new_tail = (uint16_t)(priv->io_submission_queue.tail + 1u);
+	if (new_tail >= priv->io_submission_queue.size)
+	{
+		new_tail = 0;
+	}
+
+	priv->io_submission_queue.tail = new_tail;
+	nvme_disk_driver_write_reg(disk, NVME_SQTDBL_OFFSET(1, priv->doorbell_stride), priv->io_submission_queue.tail);
+
+	// poll for completion
+	struct nvme_completion_queue_entry *cqe = priv->io_completion_queue.ptr + priv->io_completion_queue.head;
+	for (int i = 0; i < 1000000; i++)
+	{
+		uint32_t st = cqe->status_phase_and_command_identifier;
+		if (((st >> 16) & 1u) == priv->io_completion_queue.phase)
+		{
+			break; // command completed
+		}
+
+		__asm__ volatile("pause");
+	}
+
+	if (((cqe->status_phase_and_command_identifier >> 16) & 1u) != priv->io_completion_queue.phase)
+	{
+		return -ETIMEOUT; // command did not complete in time
+	}
+
+	uint32_t st2 = cqe->status_phase_and_command_identifier;
+	uint16_t status = (uint16_t)(st2 >> 17) & 0x7FFFu;
+	uint16_t new_head = (uint16_t)(priv->io_completion_queue.head + 1u);
+	if (new_head >= priv->io_completion_queue.size)
+	{
+		new_head = 0;
+		priv->io_completion_queue.phase ^= 1; // toggle phase bit
+	}
+
+	priv->io_completion_queue.head = new_head;
+	nvme_disk_driver_write_reg(disk, NVME_CQTDBL_OFFSET(1, priv->doorbell_stride), priv->io_completion_queue.head);
+
+	return status == 0 ? 0 : -EIO;
+}
+
+static int nvme_disk_driver_mount(struct disk_driver *driver)
+{
+	int res = 0;
+	size_t total_pci = pci_device_count();
+	for (size_t i = 0; i < total_pci; i++)
+	{
+		struct pci_device *dev = NULL;
+		res = pci_device_get(i, &dev);
+		if (res < 0)
+		{
+			break;
+		}
+
+		if (nvme_pci_device(dev))
+		{
+			res = nvme_disk_driver_mount_for_device(driver, dev);
+			if (res < 0)
+			{
+				break;
+			}
+		}
+	}
+
+	return res;
+}
+
+static void nvme_disk_driver_unmount(struct disk *disk)
+{
+	struct nvme_disk_driver_private *priv = disk_private_data_driver(disk);
+	if (priv)
+	{
+		nvme_pci_device_private_free(priv);
+	}
+}
+
+static int nvme_disk_driver_read(struct disk *disk, uint64_t lba, uint32_t total_sectors, void *buf)
+{
+	struct disk *hw = disk_hardware_disk(disk);
+	if (!hw)
+	{
+		hw = disk;
+	}
+
+	int remaining_sectors = total_sectors;
+	uint64_t current_lba = lba;
+	uint8_t *current_buf = (uint8_t *)buf;
+	while (remaining_sectors > 0)
+	{
+		uint16_t nlb = (remaining_sectors > 16) ? 16 : (uint16_t)remaining_sectors; // we limit each command to at most 16 sectors to avoid PRP complications
+		int rc = nvme_io_submit_and_poll(hw, NVME_OPCODE_READ, current_lba, nlb, current_buf);
+		if (rc < 0)
+		{
+			return rc;
+		}
+
+		current_lba += nlb;
+		current_buf += (size_t)nlb * NVME_SECTOR_SIZE;
+		remaining_sectors -= nlb;
+	}
+
+	return 0;
+}
+
+static int nvme_disk_driver_write(struct disk *disk, uint64_t lba, uint32_t total_sectors, const void *buf)
+{
+	struct disk *hw = disk_hardware_disk(disk);
+	if (!hw)
+	{
+		hw = disk;
+	}
+
+	int remaining_sectors = total_sectors;
+	uint64_t current_lba = lba;
+	const uint8_t *current_buf = (const uint8_t *)buf;
+	while (remaining_sectors > 0)
+	{
+		uint16_t nlb = (remaining_sectors > 16) ? 16 : (uint16_t)remaining_sectors; // we limit each command to at most 16 sectors to avoid PRP complications
+		int rc = nvme_io_submit_and_poll(hw, NVME_OPCODE_WRITE, current_lba, nlb, (void *)current_buf);
+		if (rc < 0)
+		{
+			return rc;
+		}
+
+		current_lba += nlb;
+		current_buf += (size_t)nlb * NVME_SECTOR_SIZE;
+		remaining_sectors -= nlb;
+	}
+
+	return 0;
+}
+
+static int nvme_disk_driver_mount_partition(struct disk *disk, uint64_t starting_lba, uint64_t ending_lba, struct disk **partition_disk_out)
+{
+	return disk_create_new(disk->driver, disk->hardware_disk, MYOS_DISK_TYPE_PARTITION, starting_lba, ending_lba, disk->sector_size, NULL, partition_disk_out);
+}
+
+static struct disk_driver nvme_driver = {
+	.name = "NVME",
+	.functions = {
+		.loaded = NULL,
+		.unloaded = NULL,
+		.mount = nvme_disk_driver_mount,
+		.unmount = nvme_disk_driver_unmount,
+		.read = nvme_disk_driver_read,
+		.write = nvme_disk_driver_write,
+		.mount_partition = nvme_disk_driver_mount_partition,
+	},
+};
+
+struct disk_driver *nvme_driver_init(void)
+{
+	return &nvme_driver;
 }
