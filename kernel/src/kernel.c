@@ -123,6 +123,9 @@ void kernel_main()
 	// initialize mouse system
 	mouse_system_init();
 
+	// initialize keyboard
+	keyboard_init();
+
 	// initialize window system
 	window_system_initialize();
 
@@ -182,10 +185,6 @@ void kernel_main()
 	// register kernel commands
 	isr80h_register_commands();
 	print("isr80h commands registered\n");
-
-	// initialize keyboard
-	keyboard_init();
-	print("Keyboard initialized\n");
 
 	print("PCI devices found: ");
 	size_t pci_count = pci_device_count();
