@@ -163,7 +163,6 @@ void kernel_main()
 
 	// block first page to catch stack overflows
 	paging_map(kernel_desc(), megabyte_stack_tss_end, megabyte_stack_tss_end, 0);
-	print("Stack overflow page blocked\n");
 
 	// setup tss
 	memset(&tss, 0x00, sizeof(tss));
@@ -172,33 +171,23 @@ void kernel_main()
 
 	struct tss_desc_64 *tss_desc = (struct tss_desc_64 *)&gdt[KERNEL_LONG_MODE_TSS_GDT_INDEX];
 	gdt_set_tss(tss_desc, &tss, sizeof(tss) - 1, TSS_DESCRIPTOR_TYPE, 0);
-	print("TSS set up\n");
 
 	// load tss
 	tss_load(KERNEL_LONG_MODE_TSS_SELECTOR);
-	print("TSS loaded\n");
 
 	// initialize process system
 	process_system_init();
-	print("Process system initialized\n");
 
 	// register kernel commands
 	isr80h_register_commands();
-	print("isr80h commands registered\n");
-
-	print("PCI devices found: ");
-	size_t pci_count = pci_device_count();
-	print(itoa(pci_count));
-	print("\n");
 
 	// load background image
-	// struct image *img = graphics_image_load("@:/backgrnd.bmp");
-	// graphics_draw_image(NULL, img, 0, 0);
-	// graphics_redraw_all();
+	struct image *img = graphics_image_load("@:/backgrnd.bmp");
+	graphics_draw_image(NULL, img, 0, 0);
+	graphics_redraw_all();
 
 	// enable interrupts
-	// enable_interrupts();
-	// print("Interrupts enabled\n");
+	enable_interrupts();
 
 	// load program
 	struct process *process = 0;
@@ -210,7 +199,6 @@ void kernel_main()
 		print("\n");
 		panic("Failed to load shell.elf\n");
 	}
-	print("shell.elf loaded\n");
 
 	// drop to user land
 	task_run_first_ever_task();
