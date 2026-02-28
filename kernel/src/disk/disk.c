@@ -7,6 +7,7 @@
 #include "string/string.h"
 #include "memory/heap/kheap.h"
 #include "driver.h"
+#include "disk/streamer.h"
 
 struct vector *disk_vector = NULL;	 // vector of all disks in the system
 struct disk *disk = NULL;			 // pointer to the primary disk
@@ -38,6 +39,18 @@ int disk_filesystem_mount(struct disk *disk)
 	}
 
 	return 0;
+}
+
+long disk_real_sector(struct disk *idisk, unsigned int lba)
+{
+	size_t absolute_lba = idisk->starting_lba + lba;
+	return absolute_lba;
+}
+
+long disk_real_offset(struct disk *idisk, unsigned int lba)
+{
+	size_t absolute_lba = disk_real_sector(idisk, lba);
+	return absolute_lba * idisk->sector_size;
 }
 
 int disk_create_new(struct disk_driver *driver, struct disk *hardware_disk, int type, int starting_lba, int ending_lba, size_t sector_size, void *driver_private_data, struct disk **out_disk)
@@ -81,6 +94,7 @@ int disk_create_new(struct disk_driver *driver, struct disk *hardware_disk, int 
 	disk->driver_private = driver_private_data;
 	disk->hardware_disk = hardware_disk;
 	disk->id = vector_count(disk_vector);
+	disk->cache = diskstreamer_cache_new();
 
 	if (out_disk)
 	{

@@ -2,6 +2,8 @@
 
 #include "fs/file.h"
 #include <stddef.h>
+#include <stdint.h>
+#include <stddef.h>
 
 typedef unsigned int MYOS_DISK_TYPE;
 
@@ -15,6 +17,7 @@ typedef unsigned int MYOS_DISK_TYPE;
 #define MYOS_KERNEL_FILESYSTEM_NAME "MYOSFS     "
 
 struct disk_driver;
+struct disk_stream_cache;
 struct disk
 {
 	MYOS_DISK_TYPE type;
@@ -27,6 +30,8 @@ struct disk
 
 	struct disk_driver *driver; // the disk driver responsible for this disk
 	struct disk *hardware_disk; // the hardware disk this disk is attached to
+
+	struct disk_stream_cache *cache; // cache for disk streaming
 
 	// set both to zero for primary disk
 	// all bounds checks are ignored if starting_lba and ending_lba are zero
@@ -50,3 +55,5 @@ struct disk *disk_hardware_disk(struct disk *disk);
 int disk_filesystem_mount(struct disk *disk);
 int disk_create_partition(struct disk *disk, uint64_t starting_lba, uint64_t ending_lba, struct disk **partition_disk_out);
 void *disk_private_data_driver(struct disk *disk);
+long disk_real_sector(struct disk *idisk, unsigned int lba);
+long disk_real_offset(struct disk *idisk, unsigned int lba);
