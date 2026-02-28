@@ -6,7 +6,7 @@
 #include "string/string.h"
 #include "kernel.h"
 
-void *isr80h_comman6_process_load_start(struct interrupt_frame *frame)
+void *isr80h_command6_process_load_start(struct interrupt_frame *frame)
 {
 	void *filename_user_ptr = task_get_stack_item(task_current(), 0);
 	char filename[MYOS_MAX_PATH];
@@ -34,7 +34,7 @@ out:
 	return 0;
 }
 
-void *isr80h_comman7_invoke_system_command(struct interrupt_frame *frame)
+void *isr80h_command7_invoke_system_command(struct interrupt_frame *frame)
 {
 	struct command_argument *arguments = task_virtual_addr_to_phys(task_current(), task_get_stack_item(task_current(), 0));
 	if (!arguments || strlen(arguments[0].argument) == 0)

@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "file.h"
+#include "delay.h"
 
 struct window
 {
@@ -60,6 +61,12 @@ int main(int argc, char **argv)
 		{
 			pixels[y * graphics->width + x] = blue;
 		}
+	}
+
+	for (int i = 0; i < 10; i++)
+	{
+		usleep(1000);
+		printf("Filling window with blue color in %d seconds...\n", 9 - i);
 	}
 
 	myos_window_redraw(win);

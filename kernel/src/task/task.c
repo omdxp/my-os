@@ -214,6 +214,16 @@ void task_current_save_state(struct interrupt_frame *frame)
 	task_save_state(task, frame);
 }
 
+bool task_is_sleeping(struct task *task)
+{
+	return task->sleeping.sleep_until_microseconds > tsc_microseconds();
+}
+
+void task_sleep(struct task *task, TIME_MICROSECONDS sleep_time)
+{
+	task->sleeping.sleep_until_microseconds = tsc_microseconds() + sleep_time;
+}
+
 int task_page()
 {
 	user_registers();
@@ -263,12 +273,52 @@ void *task_virtual_addr_to_phys(struct task *task, void *virt)
 
 void task_next()
 {
-	struct task *next_task = task_get_next();
-	if (!next_task)
+	struct task *next_task = NULL;
+	do
 	{
-		panic("task_next: No more tasks\n");
-	}
+		int res = task_get_next_non_sleeping_task(&next_task);
+		if (res < 0)
+		{
+			panic("task_next: Failed to get next non sleeping task\n");
+		}
+
+		if (!next_task)
+		{
+			udelay(100);
+		}
+
+	} while (!next_task);
 
 	task_switch(next_task);
 	task_return(&next_task->registers);
+}
+
+int task_get_next_non_sleeping_task(struct task **out)
+{
+	int res = 0;
+	struct task *_current_task = current_task ? current_task->next : task_head;
+	do
+	{
+		if (!_current_task)
+		{
+			_current_task = task_head;
+			if (!_current_task)
+			{
+				res = -EIO;
+				break;
+			}
+		}
+
+		if (task_is_sleeping(_current_task))
+		{
+			_current_task = _current_task->next;
+			continue;
+		}
+
+		res = 0;
+		break;
+	} while (_current_task);
+
+	*out = _current_task;
+	return res;
 }

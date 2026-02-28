@@ -1,5 +1,5 @@
 TARGET ?= x86_64-elf
-FILES=./build/start.asm.o ./build/myos.asm.o ./build/start.o ./build/stdlib.o ./build/stdio.o ./build/file.o ./build/myos.o ./build/string.o ./build/memory.o
+FILES=./build/start.asm.o ./build/myos.asm.o ./build/start.o ./build/stdlib.o ./build/stdio.o ./build/file.o ./build/myos.o ./build/string.o ./build/memory.o ./build/delay.o
 INCLUDES=-I./src
 FLAGS= -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -32,6 +32,9 @@ all: $(FILES)
 
 ./build/memory.o: ./src/memory.c
 	$(TARGET)-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/memory.c -o ./build/memory.o
+
+./build/delay.o: ./src/delay.c
+	$(TARGET)-gcc $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/delay.c -o ./build/delay.o
 
 clean:
 	rm -rf $(FILES)

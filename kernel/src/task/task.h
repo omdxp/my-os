@@ -1,8 +1,10 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "config.h"
 #include "idt/idt.h"
+#include "io/tsc.h"
 
 struct registers
 {
@@ -30,6 +32,12 @@ struct task
 
 	// process of task
 	struct process *process;
+
+	// sleeping info
+	struct
+	{
+		TIME_MICROSECONDS sleep_until_microseconds; // if task is sleeping, the time (in microseconds) until which it should sleep. if 0, task is not sleeping
+	} sleeping;
 
 	// next task in linked list
 	struct task *next;
@@ -59,3 +67,7 @@ void *task_virtual_addr_to_phys(struct task *task, void *virt);
 void task_next();
 struct paging_desc *task_paging_desc(struct task *task);
 struct paging_desc *task_current_paging_desc();
+
+void task_sleep(struct task *task, TIME_MICROSECONDS sleep_time);
+bool task_is_sleeping(struct task *task);
+int task_get_next_non_sleeping_task(struct task **out);

@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 struct file_stat;
 struct window;
@@ -81,3 +82,4 @@ void myos_window_redraw(struct window *win);
 void *myos_graphics_create(size_t x, size_t y, size_t width, size_t height, void *parent_graphics);
 void myos_window_redraw_region(long rel_x, long rel_y, long rel_width, long rel_height, struct window *win);
 void myos_window_title_set(struct window *win, const char *title);
+void myos_udelay(uint64_t microseconds);

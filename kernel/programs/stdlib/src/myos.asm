@@ -26,6 +26,7 @@ global myos_window_redraw:function
 global myos_graphics_create:function
 global myos_window_redraw_region:function
 global myos_window_title_set:function
+global myos_udelay:function
 
 ; void print(const char* filename)
 print:
@@ -235,4 +236,12 @@ myos_window_title_set:
 	push qword 0        ; update type: title
 	int 0x80
 	add rsp, 16         ; clean up stack
+	ret
+
+; void myos_udelay(uint64_t microseconds)
+myos_udelay:
+	mov rax, 25         ; command 25 udelay
+	push qword rdi      ; variable microseconds
+	int 0x80
+	add rsp, 8          ; clean up stack
 	ret
